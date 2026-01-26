@@ -8,13 +8,19 @@
  * @module
  */
 
+import type * as forms from "../forms.js";
+import type * as tourDates from "../tourDates.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  forms: typeof forms;
+  tourDates: typeof tourDates;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
