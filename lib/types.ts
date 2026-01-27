@@ -7,6 +7,30 @@ export interface TourDate {
   lng: number;
   ticketLink: string;
   description?: string;
+  address?: string;
+  time?: string;
+}
+
+export type AttractionCategory =
+  | "environmental"
+  | "vendors"
+  | "venues"
+  | "services"
+  | "education"
+  | "art"
+  | "wellness"
+  | "miscellaneous"
+  | "accommodation";
+
+export interface Attraction {
+  _id: string;
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  category: AttractionCategory;
+  city: string;
+  description?: string;
 }
 
 export type ViewState =
@@ -38,4 +62,23 @@ export interface TourInfo {
   description: string;
   lat: number;
   lng: number;
+}
+
+export interface YouTubeChannel {
+  id: string;
+  title: string;
+  description: string;
+  subscriberCount: number;
+  thumbnail: string;
+  customUrl: string;
+}
+
+export interface YouTubeVideo {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+  viewCount: number;
+  url: string;
 }

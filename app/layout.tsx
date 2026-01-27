@@ -8,6 +8,7 @@ import {
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ToastProvider } from "@/components/ui/toast";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-sans",
@@ -55,7 +56,9 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ConvexClientProvider>
         </ThemeProvider>
       </body>
     </html>

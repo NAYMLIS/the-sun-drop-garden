@@ -92,10 +92,10 @@ export default function ConnectPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <main className="relative min-h-screen px-4 pt-24 pb-24 text-card-foreground">
+      <main className="relative min-h-screen animate-fade-in px-4 pt-24 pb-24 text-card-foreground">
         <div className="mx-auto max-w-4xl space-y-12">
           {/* Email List Section */}
-          <div className="rounded-lg border bg-card p-8">
+          <div className="rounded-lg p-8">
             <h3 className="mb-6 font-serif text-2xl">Email List</h3>
             <form
               onSubmit={(e) => {
@@ -108,7 +108,7 @@ export default function ConnectPage() {
                 <emailForm.Field
                   name="name"
                   validators={{
-                    onChange: ({ value }) => {
+                    onBlur: ({ value }) => {
                       const result = nameSchema.safeParse(value);
                       if (!result.success) {
                         return result.error.issues[0].message;
@@ -126,7 +126,7 @@ export default function ConnectPage() {
                         name={field.name}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Your name"
+                        placeholder="Name"
                         required
                         type="text"
                         value={field.state.value}
@@ -143,7 +143,7 @@ export default function ConnectPage() {
                 <emailForm.Field
                   name="email"
                   validators={{
-                    onChange: ({ value }) => {
+                    onBlur: ({ value }) => {
                       const result = emailSchema.safeParse(value);
                       if (!result.success) {
                         return result.error.issues[0].message;
@@ -161,7 +161,7 @@ export default function ConnectPage() {
                         name={field.name}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="your.email@example.com"
+                        placeholder="Email"
                         required
                         type="email"
                         value={field.state.value}
@@ -175,15 +175,39 @@ export default function ConnectPage() {
                   )}
                 </emailForm.Field>
 
-                <Button className="w-full" type="submit">
-                  Submit
-                </Button>
+                <emailForm.Subscribe
+                  selector={(state) => [
+                    state.values.name,
+                    state.values.email,
+                    state.errors,
+                  ]}
+                >
+                  {([name, email, errors]) => {
+                    const nameValid = nameSchema.safeParse(
+                      (typeof name === "string" ? name : "").trim()
+                    ).success;
+                    const emailValid = emailSchema.safeParse(
+                      (typeof email === "string" ? email : "").trim()
+                    ).success;
+                    const isValid =
+                      nameValid && emailValid && errors.length === 0;
+                    return (
+                      <Button
+                        className={`w-fit self-start border-0 bg-transparent text-foreground hover:bg-transparent ${isValid ? "" : "opacity-55"}`}
+                        disabled={!isValid}
+                        type="submit"
+                      >
+                        Submit
+                      </Button>
+                    );
+                  }}
+                </emailForm.Subscribe>
               </FieldGroup>
             </form>
           </div>
 
           {/* Inquiries Section */}
-          <div className="rounded-lg border bg-card p-8">
+          <div className="rounded-lg p-8">
             <h3 className="mb-6 font-serif text-2xl">Inquiries</h3>
             <form
               onSubmit={(e) => {
@@ -201,7 +225,7 @@ export default function ConnectPage() {
                         name={field.name}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Your name"
+                        placeholder="Name"
                         type="text"
                         value={field.state.value}
                       />
@@ -217,7 +241,7 @@ export default function ConnectPage() {
                 <inquiryForm.Field
                   name="email"
                   validators={{
-                    onChange: ({ value }) => {
+                    onBlur: ({ value }) => {
                       if (!value) {
                         return undefined;
                       }
@@ -236,7 +260,7 @@ export default function ConnectPage() {
                         name={field.name}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="your.email@example.com"
+                        placeholder="Email"
                         type="email"
                         value={field.state.value}
                       />
@@ -310,7 +334,7 @@ export default function ConnectPage() {
                         name={field.name}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Tell us more about your inquiry..."
+                        placeholder="Message"
                         rows={5}
                         value={field.state.value}
                       />
@@ -323,9 +347,22 @@ export default function ConnectPage() {
                   )}
                 </inquiryForm.Field>
 
-                <Button className="w-full" type="submit">
-                  Submit
-                </Button>
+                <inquiryForm.Subscribe
+                  selector={(state) => [state.values.inquiryTypes]}
+                >
+                  {([inquiryTypes]) => {
+                    const isValid = (inquiryTypes || []).length > 0;
+                    return (
+                      <Button
+                        className={`w-fit self-start border-0 bg-transparent text-foreground hover:bg-transparent ${isValid ? "" : "opacity-55"}`}
+                        disabled={!isValid}
+                        type="submit"
+                      >
+                        Submit
+                      </Button>
+                    );
+                  }}
+                </inquiryForm.Subscribe>
               </FieldGroup>
             </form>
           </div>

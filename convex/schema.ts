@@ -10,7 +10,19 @@ export default defineSchema({
     lng: v.number(),
     ticketLink: v.string(),
     description: v.optional(v.string()),
+    address: v.optional(v.string()),
+    time: v.optional(v.string()),
   }).index("by_date", ["date"]),
+
+  attractions: defineTable({
+    name: v.string(),
+    address: v.optional(v.string()),
+    lat: v.number(),
+    lng: v.number(),
+    category: v.string(),
+    city: v.string(),
+    description: v.optional(v.string()),
+  }).index("by_city", ["city"]),
 
   emailSubscriptions: defineTable({
     name: v.string(),

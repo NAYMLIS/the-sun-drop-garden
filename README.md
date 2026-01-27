@@ -17,7 +17,7 @@ An immersive artist website featuring tour dates, music, visual galleries, and f
 - **Database**: Convex
 - **UI**: shadcn/ui components + Tailwind CSS 4
 - **Visualizations**: D3.js + TopoJSON
-- **APIs**: Spotify Web API, Google Gemini API
+- **APIs**: Spotify Web API, Google Gemini API, YouTube Data API v3
 - **Fonts**: Playfair Display (serif), Nunito Sans
 
 ## Getting Started
@@ -26,7 +26,8 @@ An immersive artist website featuring tour dates, music, visual galleries, and f
 
 - Node.js 18+ or Bun
 - Spotify Developer Account
-- Google AI Studio Account
+- Google AI Studio Account (for Gemini AI)
+- YouTube Data API v3 Key (for Light page)
 - Convex Account
 
 ### Installation
@@ -50,7 +51,9 @@ An immersive artist website featuring tour dates, music, visual galleries, and f
 4. Configure your environment variables in `.env.local`:
    - Get Spotify credentials from [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
    - Get Gemini API key from [Google AI Studio](https://ai.google.dev)
+   - Get YouTube API key from [Google Cloud Console](https://console.cloud.google.com/) (enable YouTube Data API v3)
    - Set your admin password for the admin panel
+   - (Optional) Set `RESEND_API_KEY` for email forwarding functionality (Resend integration coming soon)
 
 5. Set up Convex:
    ```bash
@@ -81,7 +84,8 @@ An immersive artist website featuring tour dates, music, visual galleries, and f
 ├── app/
 │   ├── api/              # Next.js API routes
 │   │   ├── spotify/      # Spotify API endpoints
-│   │   └── gemini/       # Gemini AI endpoints
+│   │   ├── gemini/       # Gemini AI endpoints
+│   │   └── youtube/      # YouTube Data API endpoints
 │   ├── layout.tsx        # Root layout with providers
 │   └── page.tsx          # Main application
 ├── components/
@@ -113,9 +117,23 @@ The default artist is "((( O )))" with ID `7ky8m0sLXzkLqR7wsjfC6P`. To change th
 1. Get an API key from [Google AI Studio](https://ai.google.dev)
 2. Add it to `.env.local` as `GEMINI_API_KEY`
 
+### YouTube Data API
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the YouTube Data API v3
+4. Create credentials (API Key)
+5. Add it to `.env.local` as `YOUTUBE_API_KEY`
+
+The Light page displays the latest videos and subscriber count from the `@TheSundropGarden` YouTube channel.
+
 ### Admin Access
 
 The admin panel is protected by a simple password check. Set `NEXT_PUBLIC_ADMIN_SECRET` in `.env.local` to your desired password.
+
+### Email Forwarding (Resend)
+
+To enable email forwarding for form inquiries, set `RESEND_API_KEY` in `.env.local` with your Resend API key. The admin panel's Connect tab allows you to configure forwarding email addresses. Resend integration will be implemented in a future update.
 
 ## Usage
 
@@ -123,7 +141,7 @@ The admin panel is protected by a simple password check. Set `NEXT_PUBLIC_ADMIN_
 
 - **HOME**: Landing page with album promotion
 - **TOUR**: Interactive tour dates with globe visualization
-- **LIGHT**: Visual gallery
+- **LIGHT**: YouTube channel display with latest videos and subscriber count
 - **SOUND**: Spotify artist profile and albums
 - **CONNECT**: Email list signup and inquiry forms
 - **ADMIN**: Tour management (password protected)

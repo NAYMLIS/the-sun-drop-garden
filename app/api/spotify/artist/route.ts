@@ -31,7 +31,7 @@ async function getAccessToken(): Promise<string> {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const artistId = searchParams.get("id") || "7ky8m0sLXzkLqR7wsjfC6P"; // Default: ((( O )))
+  const artistId = searchParams.get("id") || "5rBFU1rhgs1nNghopuj9k8"; // Default: ((( 0 )))
 
   try {
     const token = await getAccessToken();

@@ -8,8 +8,9 @@
  * @module
  */
 
+import type * as attractions from "../attractions.js";
 import type * as forms from "../forms.js";
-import type * as tourDates from "../tourDates.js";
+import type * as tourDates from "../tour-dates.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  attractions: typeof attractions;
   forms: typeof forms;
   tourDates: typeof tourDates;
 }>;

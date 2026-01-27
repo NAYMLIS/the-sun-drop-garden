@@ -1,5 +1,21 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+
+export const listEmailSubscriptions = query({
+  args: {},
+  handler: async (ctx) => {
+    const subscriptions = await ctx.db.query("emailSubscriptions").collect();
+    return subscriptions.sort((a, b) => b.subscribedAt - a.subscribedAt);
+  },
+});
+
+export const listInquiries = query({
+  args: {},
+  handler: async (ctx) => {
+    const inquiries = await ctx.db.query("inquiries").collect();
+    return inquiries.sort((a, b) => b.submittedAt - a.submittedAt);
+  },
+});
 
 export const addEmailSubscription = mutation({
   args: {
