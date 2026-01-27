@@ -1,7 +1,9 @@
 "use client";
 
+import { useAtomValue } from "jotai";
 import { useRef } from "react";
 import { TourMap, type TourMapRef } from "@/components/tour-map";
+import { mapFullScreenAtom } from "@/lib/atoms";
 import type { Attraction, TourDate } from "@/lib/types";
 
 interface TourContentProps {
@@ -11,9 +13,12 @@ interface TourContentProps {
 
 export function TourContent({ dates, attractions }: TourContentProps) {
   const mapRef = useRef<TourMapRef>(null);
+  const isFullScreen = useAtomValue(mapFullScreenAtom);
 
   return (
-    <div className="flex flex-1 flex-col gap-8 overflow-hidden pb-8 md:flex-row">
+    <div
+      className={`flex flex-1 flex-col gap-8 pb-8 md:flex-row ${isFullScreen ? "" : "overflow-hidden"}`}
+    >
       {/* List View */}
       <div className="scrollbar-hide w-full space-y-4 overflow-y-auto pr-4 md:w-1/2">
         {dates.map((d: TourDate) => (

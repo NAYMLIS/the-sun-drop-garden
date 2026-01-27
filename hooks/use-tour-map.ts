@@ -1,7 +1,9 @@
 "use client";
 
+import { useAtom } from "jotai";
 import maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { mapFullScreenAtom } from "@/lib/atoms";
 import { getCategoryColor, tourMapStyle } from "@/lib/tour-map-style";
 import type { Attraction, TourDate } from "@/lib/types";
 
@@ -18,6 +20,7 @@ interface UseTourMapReturn {
   attractionsVisible: boolean;
   sortedDates: TourDate[];
   currentIndex: number;
+  isFullScreen: boolean;
   navigateToCity: (city: TourDate) => void;
   navigateToPrevious: () => void;
   navigateToNext: () => void;
@@ -25,6 +28,8 @@ interface UseTourMapReturn {
   setSelectedAttraction: (attraction: Attraction | null) => void;
   setShowAttractionTags: (show: boolean) => void;
   zoomToShowAttractions: () => void;
+  toggleFullScreen: () => void;
+  resetToGlobalView: () => void;
 }
 
 function createTourMarkerElement(
@@ -96,6 +101,7 @@ export function useTourMap({
     useState<Attraction | null>(null);
   const [showAttractionTags, setShowAttractionTags] = useState(false);
   const [attractionsVisible, setAttractionsVisible] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useAtom(mapFullScreenAtom);
 
   const sortedDates = sortDates(dates);
   const center = calculateCenter(sortedDates);
@@ -153,6 +159,33 @@ export function useTourMap({
       center: [selectedCity.lng, selectedCity.lat],
       zoom: 8,
       duration: 800,
+    });
+  };
+
+  const toggleFullScreen = () => {
+    setIsFullScreen((prev) => {
+      const newValue = !prev;
+      // Resize map after DOM updates with new fullscreen state
+      setTimeout(() => {
+        mapRef.current?.resize();
+      }, 0);
+      return newValue;
+    });
+  };
+
+  const resetToGlobalView = () => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    setSelectedCity(null);
+    setSelectedAttraction(null);
+    setShowAttractionTags(false);
+
+    mapRef.current.flyTo({
+      center: centerRef.current,
+      zoom: 1.5,
+      duration: 1000,
     });
   };
 
@@ -334,6 +367,7 @@ export function useTourMap({
     attractionsVisible,
     sortedDates,
     currentIndex,
+    isFullScreen,
     navigateToCity,
     navigateToPrevious,
     navigateToNext,
@@ -341,5 +375,7 @@ export function useTourMap({
     setSelectedAttraction,
     setShowAttractionTags,
     zoomToShowAttractions,
+    toggleFullScreen,
+    resetToGlobalView,
   };
 }

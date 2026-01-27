@@ -7,7 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Compass,
   MapPin,
+  Maximize2,
+  Minimize2,
   Ticket,
   X,
 } from "lucide-react";
@@ -34,6 +37,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       showAttractionTags,
       sortedDates,
       currentIndex,
+      isFullScreen,
       navigateToCity,
       navigateToPrevious,
       navigateToNext,
@@ -41,6 +45,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       setSelectedAttraction,
       setShowAttractionTags,
       zoomToShowAttractions,
+      toggleFullScreen,
+      resetToGlobalView,
     } = useTourMap({ dates, attractions });
 
     useImperativeHandle(ref, () => ({ navigateToCity }), [navigateToCity]);
@@ -55,12 +61,35 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
 
     return (
       <div
-        className="group relative flex h-full min-h-[400px] w-full items-center justify-center overflow-hidden rounded-lg border border-primary/10 bg-background/30"
+        className={`group relative flex items-center justify-center overflow-hidden ${
+          isFullScreen
+            ? "!fixed inset-0 z-[9999] h-screen w-screen bg-background"
+            : "h-full min-h-[400px] w-full rounded-lg border border-primary/10 bg-background/30"
+        }`}
         ref={containerRef}
-        style={{ minHeight: "400px" }}
       >
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-foreground/40 uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">
           Drag, Scroll, Click
+        </div>
+
+        {/* Control Buttons - Bottom Right */}
+        <div className="absolute right-4 bottom-20 z-10 flex flex-col gap-2">
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground"
+            onClick={toggleFullScreen}
+            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
+            type="button"
+          >
+            {isFullScreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground"
+            onClick={resetToGlobalView}
+            title="Reset to global view"
+            type="button"
+          >
+            <Compass size={16} />
+          </button>
         </div>
 
         {/* Navigation Arrows */}
