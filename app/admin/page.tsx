@@ -18,13 +18,13 @@ export default function AdminPage() {
 
   const dates = useQuery(api.tourDates.list) || [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
       return;
     }
 
-    const isValid = verifyAdminPassword(password);
+    const isValid = await verifyAdminPassword(password);
 
     if (isValid) {
       setIsUnlocked(true);

@@ -10,7 +10,7 @@
 
 import type * as attractions from "../attractions.js";
 import type * as forms from "../forms.js";
-import type * as tourDates from "../tour-dates.js";
+import type * as tourDates from "../tourDates.js";
 
 import type {
   ApiFromModules,

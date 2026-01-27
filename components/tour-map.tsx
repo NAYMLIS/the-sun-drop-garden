@@ -452,8 +452,12 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       // Zoom
       const zoomBehavior = zoom()
         .scaleExtent([100, 3000])
-        .on("start", () => {
-          userInteracted.current = true;
+        .on("start", (event) => {
+          // Only mark as user interaction if it's from a real event (not programmatic)
+          // Programmatic transforms have event.sourceEvent === null
+          if (event.sourceEvent !== null) {
+            userInteracted.current = true;
+          }
         })
         .on("zoom", (event) => {
           projectionRef.current.scale(event.transform.k);
