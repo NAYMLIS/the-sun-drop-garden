@@ -26,6 +26,7 @@ import {
 } from "react";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
+import { calculateTourCenterRotation } from "@/lib/map-utils";
 import type { Attraction, AttractionCategory, TourDate } from "@/lib/types";
 
 interface TourMapProps {
@@ -454,8 +455,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         .scaleExtent([100, 3000])
         .on("start", (event) => {
           // Only mark as user interaction if it's from a real event (not programmatic)
-          // Programmatic transforms have event.sourceEvent === null
-          if (event.sourceEvent !== null) {
+          // Programmatic transforms have sourceEvent as null/undefined (falsy)
+          if (event.sourceEvent) {
             userInteracted.current = true;
           }
         })
@@ -908,17 +909,30 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
 
         const newScale = Math.min(width, height) / 2.2;
 
-        // Calculate rotation from dates if available and user hasn't interacted
-        // Otherwise preserve current rotation
-        let rotationToUse: [number, number, number] | null = null;
-        if (!userInteracted.current && sortedDates.length > 0) {
-          const avgLng =
-            sortedDates.reduce((s, d) => s + d.lng, 0) / sortedDates.length;
-          const avgLat =
-            sortedDates.reduce((s, d) => s + d.lat, 0) / sortedDates.length;
-          rotationToUse = [-avgLng, -avgLat, 0];
+        // Calculate rotation from dates if:
+        // 1. We haven't set the initial rotation yet
+        // 2. User hasn't manually interacted with the globe
+        // 3. We have tour dates to center on
+        let rotationToUse: [number, number, number];
+        const shouldSetInitialRotation =
+          !(initialRotationSet.current || userInteracted.current) &&
+          sortedDates.length > 0;
+
+        if (shouldSetInitialRotation) {
+          const calculatedRotation = calculateTourCenterRotation(sortedDates);
+          if (calculatedRotation) {
+            rotationToUse = calculatedRotation;
+            initialRotationSet.current = true;
+          } else {
+            // Fallback to current rotation if calculation fails
+            rotationToUse = projectionRef.current.rotate() as [
+              number,
+              number,
+              number,
+            ];
+          }
         } else {
-          // Preserve current rotation if user has interacted
+          // Preserve current rotation
           rotationToUse = projectionRef.current.rotate() as [
             number,
             number,
@@ -932,7 +946,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
           .translate([width / 2, height / 2])
           .rotate(rotationToUse);
 
-        // Sync zoom behavior state
+        // Sync zoom behavior state (programmatic - won't trigger userInteracted)
         // @ts-expect-error - D3 type compatibility
         selectCanvas.call(zoomBehavior.transform, zoomIdentity.scale(newScale));
 
@@ -947,12 +961,6 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       zoomedCanvas.on("mousedown.zoom", null).on("dblclick.zoom", null);
 
       resizeCanvas();
-
-      // Mark that initial rotation has been set if we have dates
-      // resizeCanvas already set the rotation, so we just need to mark it
-      if (!userInteracted.current && sortedDates.length > 0) {
-        initialRotationSet.current = true;
-      }
 
       // --- Animation Loop ---
       // Auto-rotate only if user hasn't interacted, we have dates, and rotation is not default
