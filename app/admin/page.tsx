@@ -9,6 +9,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/convex/_generated/api";
+import { verifyAdminPassword } from "./actions";
 
 export default function AdminPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -22,8 +23,10 @@ export default function AdminPage() {
     if (!password.trim()) {
       return;
     }
-    const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET || "admin123";
-    if (password === adminSecret) {
+
+    const isValid = verifyAdminPassword(password);
+
+    if (isValid) {
       setIsUnlocked(true);
     } else {
       addToast("Incorrect password", "destructive");

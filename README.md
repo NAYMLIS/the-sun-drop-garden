@@ -129,7 +129,7 @@ The Light page displays the latest videos and subscriber count from the `@TheSun
 
 ### Admin Access
 
-The admin panel is protected by a simple password check. Set `NEXT_PUBLIC_ADMIN_SECRET` in `.env.local` to your desired password.
+The admin panel is protected by a simple password check. Set `NEXT_PRIVATE_ADMIN_SECRET` in `.env.local` to your desired password.
 
 ### Email Forwarding (Resend)
 
@@ -149,7 +149,7 @@ To enable email forwarding for form inquiries, set `RESEND_API_KEY` in `.env.loc
 ### Managing Tour Dates
 
 1. Navigate to the ADMIN view
-2. Enter your admin password (from `NEXT_PUBLIC_ADMIN_SECRET`)
+2. Enter your admin password (from `NEXT_PRIVATE_ADMIN_SECRET`)
 3. Use the city search to find locations
 4. Click "Generate Description with AI" to create poetic tour descriptions
 5. Submit to add the tour date
