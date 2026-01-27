@@ -274,25 +274,26 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
           currentScale
         );
 
-        // 5. Attractions (only when a city is selected, toggle is active, and zoomed in enough)
-        if (selectedCityRef.current) {
-          const cityAttractions = attractions.filter(
-            (a) => a.city === selectedCityRef.current?.city
+        // 5. Attractions (automatically shown when zoomed in enough)
+        // Calculate initial/default scale for comparison
+        const initialScale = Math.min(width, height) / 2.2;
+        // Show attractions automatically when zoomed in enough (2x initial scale)
+        const shouldShowAttractions = currentScale >= initialScale * 2;
+        if (shouldShowAttractions) {
+          // If a city is selected, show only that city's attractions
+          // Otherwise show all attractions when zoomed in
+          const attractionsToShow = selectedCityRef.current
+            ? attractions.filter(
+                (a) => a.city === selectedCityRef.current?.city
+              )
+            : attractions;
+          renderAttractions(
+            attractionsToShow,
+            projection,
+            context,
+            width,
+            height
           );
-          // Calculate initial/default scale for comparison
-          const initialScale = Math.min(width, height) / 2.2;
-          // Only show attractions when toggle is active AND zoomed in enough (2x initial scale)
-          const shouldShowAttractions =
-            showAttractionTagsRef.current && currentScale >= initialScale * 2;
-          if (shouldShowAttractions) {
-            renderAttractions(
-              cityAttractions,
-              projection,
-              context,
-              width,
-              height
-            );
-          }
         }
       };
 
@@ -374,13 +375,18 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       };
 
       const renderAttractions = (
-        cityAttractions: Attraction[],
+        attractionsToRender: Attraction[],
         projection: ReturnType<typeof geoOrthographic>,
         ctx: CanvasRenderingContext2D,
         width: number,
         height: number
       ) => {
-        for (const attraction of cityAttractions) {
+        const currentScale = projection.scale();
+        const initialScale = Math.min(width, height) / 2.2;
+        // Show labels when zoomed in 3x or more
+        const showLabels = currentScale >= initialScale * 3;
+
+        for (const attraction of attractionsToRender) {
           const center = projection.invert
             ? projection.invert([width / 2, height / 2])
             : [0, 0];
@@ -402,7 +408,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                 y,
                 isSelected,
                 attraction.category,
-                attraction.name
+                attraction.name,
+                showLabels || isSelected
               );
             }
           }
@@ -415,7 +422,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         y: number,
         isSelected: boolean,
         category: AttractionCategory,
-        name: string
+        name: string,
+        showLabel: boolean
       ) => {
         const color = getCategoryColor(category);
 
@@ -433,10 +441,12 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         ctx.fillStyle = color.replace("0.8", "1");
         ctx.fill();
 
-        // Label (only if selected)
-        if (isSelected) {
+        // Label (show when zoomed in or selected)
+        if (showLabel) {
           ctx.textAlign = "left";
-          ctx.font = "500 11px Montserrat";
+          ctx.font = isSelected
+            ? "bold 11px Montserrat"
+            : "500 10px Montserrat";
           ctx.fillStyle = "#f3e9d2";
           ctx.shadowColor = "rgba(0,0,0,0.8)";
           ctx.shadowBlur = 3;
@@ -507,18 +517,13 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       const getClosestAttraction = (
         event: MouseEvent | PointerEvent
       ): Attraction | null => {
-        if (!selectedCityRef.current) {
-          return null;
-        }
-
-        // Only allow clicking attractions if toggle is active and zoomed in enough
+        // Allow clicking attractions when zoomed in enough (no toggle required)
         const dpr = window.devicePixelRatio || 1;
         const width = canvas.width / dpr;
         const height = canvas.height / dpr;
         const currentScale = projectionRef.current.scale();
         const initialScale = Math.min(width, height) / 2.2;
-        const shouldShowAttractions =
-          showAttractionTagsRef.current && currentScale >= initialScale * 2;
+        const shouldShowAttractions = currentScale >= initialScale * 2;
 
         if (!shouldShowAttractions) {
           return null;
@@ -527,12 +532,14 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         const [mouseX, mouseY] = pointer(event, canvas);
         const projection = projectionRef.current;
 
-        const cityAttractions = attractions.filter(
-          (a) => a.city === selectedCityRef.current?.city
-        );
+        // If a city is selected, only check that city's attractions
+        // Otherwise check all attractions
+        const attractionsToCheck = selectedCityRef.current
+          ? attractions.filter((a) => a.city === selectedCityRef.current?.city)
+          : attractions;
 
         return findNearestVisibleAttraction(
-          cityAttractions,
+          attractionsToCheck,
           mouseX,
           mouseY,
           projection,
