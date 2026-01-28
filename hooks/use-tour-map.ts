@@ -94,7 +94,7 @@ export function useTourMap({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const attractionMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const isAnimatingRef = useRef(false);
+  const previousSelectedCityRef = useRef<TourDate | null>(null);
 
   const [selectedCity, setSelectedCity] = useState<TourDate | null>(null);
   const [selectedAttraction, setSelectedAttraction] =
@@ -117,25 +117,29 @@ export function useTourMap({
     : -1;
 
   const navigateToCity = (city: TourDate) => {
-    if (!mapRef.current || isAnimatingRef.current) {
+    if (!mapRef.current) {
       return;
     }
 
-    isAnimatingRef.current = true;
+    // Check if this is a second click on the same city
+    const isSecondClick = previousSelectedCityRef.current?._id === city._id;
+    previousSelectedCityRef.current = city;
+
     setSelectedCity(city);
     setSelectedAttraction(null);
     setShowAttractionTags(false);
 
+    // First click: zoom to level 6, second click: zoom to level 8
+    const targetZoom = isSecondClick ? 8 : 6;
+
+    // Stop any ongoing animation and immediately start new one
+    mapRef.current.stop();
     mapRef.current.flyTo({
       center: [city.lng, city.lat],
-      zoom: 6,
-      duration: 1500,
+      zoom: targetZoom,
+      duration: 600,
       essential: true,
     });
-
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 1600);
   };
 
   const navigateToPrevious = () => {
@@ -155,11 +159,42 @@ export function useTourMap({
       return;
     }
 
-    mapRef.current.flyTo({
-      center: [selectedCity.lng, selectedCity.lat],
-      zoom: 8,
-      duration: 800,
-    });
+    const cityAttractions = attractions.filter(
+      (a) => a.city === selectedCity.city
+    );
+
+    if (cityAttractions.length === 0) {
+      return;
+    }
+
+    // Calculate bounding box from all attractions
+    const lngs = cityAttractions.map((a) => a.lng);
+    const lats = cityAttractions.map((a) => a.lat);
+
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+
+    // Use fitBounds to show all attractions with padding
+    mapRef.current.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      {
+        padding: 50,
+        duration: 800,
+        maxZoom: 15,
+      }
+    );
+
+    // Ensure zoom is at least 7 after fitBounds completes
+    setTimeout(() => {
+      if (mapRef.current && mapRef.current.getZoom() < 7) {
+        mapRef.current.zoomTo(7, { duration: 400 });
+      }
+    }, 850);
   };
 
   const toggleFullScreen = () => {
@@ -208,12 +243,8 @@ export function useTourMap({
       center: initialCenter,
       zoom: 1.5,
       attributionControl: false,
+      doubleClickZoom: false,
     });
-
-    map.addControl(
-      new maplibregl.AttributionControl({ compact: true }),
-      "bottom-right"
-    );
 
     mapRef.current = map;
 
@@ -269,7 +300,7 @@ export function useTourMap({
 
     // Track zoom level for attractions visibility
     map.on("zoomend", () => {
-      const shouldShow = map.getZoom() >= 4;
+      const shouldShow = map.getZoom() >= 7;
       setAttractionsVisible((prev) =>
         prev !== shouldShow ? shouldShow : prev
       );
@@ -287,12 +318,7 @@ export function useTourMap({
         setSelectedCity(null);
         setSelectedAttraction(null);
         setShowAttractionTags(false);
-
-        map.flyTo({
-          center: centerRef.current,
-          zoom: 1.5,
-          duration: 1000,
-        });
+        previousSelectedCityRef.current = null;
       }
     });
 
@@ -338,9 +364,12 @@ export function useTourMap({
     attractionMarkersRef.current = [];
 
     if (attractionsVisible) {
+      // Get set of valid tour cities
+      const validCities = new Set(sortedDates.map((d) => d.city));
+
       const attractionsToShow = selectedCity
         ? attractions.filter((a) => a.city === selectedCity.city)
-        : attractions;
+        : attractions.filter((a) => validCities.has(a.city));
 
       for (const attraction of attractionsToShow) {
         const el = createAttractionMarkerElement(attraction, false);
@@ -357,7 +386,7 @@ export function useTourMap({
         attractionMarkersRef.current.push(marker);
       }
     }
-  }, [attractionsVisible, selectedCity, attractions]);
+  }, [attractionsVisible, selectedCity, attractions, sortedDates]);
 
   return {
     containerRef,
