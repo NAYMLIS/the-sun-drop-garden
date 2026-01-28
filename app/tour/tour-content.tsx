@@ -15,7 +15,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
   return (
     <div className="flex flex-1 flex-col gap-8 md:flex-row">
       {/* List View */}
-      <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto pr-4 pb-4 md:max-h-[calc(100vh-12rem)] md:w-2/3 md:flex-col md:space-y-4 md:overflow-y-auto">
+      <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto pr-4 pb-4 md:max-h-[calc(100vh-12rem)] md:w-1/3 md:flex-col md:space-y-4 md:overflow-y-auto">
         {dates.map((d: TourDate) => (
           <button
             className="group flex h-32 w-[85vw] flex-shrink-0 cursor-pointer snap-center flex-col justify-between rounded-lg border border-transparent bg-foreground/5 p-3 text-left transition-all hover:border-primary/30 hover:bg-foreground/10 md:h-28 md:w-full"
@@ -62,7 +62,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
         ))}
       </div>
       {/* Map View */}
-      <div className="min-h-[300px] w-full pb-6 md:h-[calc(100vh-12rem)] md:w-1/3">
+      <div className="min-h-[300px] w-full pb-6 md:h-[calc(100vh-12rem)] md:w-2/3">
         <TourMap attractions={attractions} dates={dates} ref={mapRef} />
       </div>
     </div>

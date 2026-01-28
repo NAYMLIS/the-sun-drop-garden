@@ -22,6 +22,7 @@ interface UseTourMapReturn {
   currentIndex: number;
   isFullScreen: boolean;
   navigateToCity: (city: TourDate) => void;
+  navigateToAttraction: (attraction: Attraction) => void;
   navigateToPrevious: () => void;
   navigateToNext: () => void;
   setSelectedCity: (city: TourDate | null) => void;
@@ -154,6 +155,23 @@ export function useTourMap({
     }
   };
 
+  const navigateToAttraction = (attraction: Attraction) => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    setSelectedAttraction(attraction);
+
+    // Stop any ongoing animation and zoom to attraction location
+    mapRef.current.stop();
+    mapRef.current.flyTo({
+      center: [attraction.lng, attraction.lat],
+      zoom: 9,
+      duration: 600,
+      essential: true,
+    });
+  };
+
   const zoomToShowAttractions = () => {
     if (!(mapRef.current && selectedCity)) {
       return;
@@ -227,6 +245,10 @@ export function useTourMap({
   // Store navigateToCity in a ref for event handlers
   const navigateToCityRef = useRef(navigateToCity);
   navigateToCityRef.current = navigateToCity;
+
+  // Store navigateToAttraction in a ref for event handlers
+  const navigateToAttractionRef = useRef(navigateToAttraction);
+  navigateToAttractionRef.current = navigateToAttraction;
 
   // Initialize map once
   useEffect(() => {
@@ -376,7 +398,7 @@ export function useTourMap({
 
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          setSelectedAttraction(attraction);
+          navigateToAttractionRef.current(attraction);
         });
 
         const marker = new maplibregl.Marker({ element: el })
@@ -398,6 +420,7 @@ export function useTourMap({
     currentIndex,
     isFullScreen,
     navigateToCity,
+    navigateToAttraction,
     navigateToPrevious,
     navigateToNext,
     setSelectedCity,

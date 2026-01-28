@@ -41,7 +41,6 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       navigateToCity,
       navigateToPrevious,
       navigateToNext,
-      setSelectedCity,
       setSelectedAttraction,
       setShowAttractionTags,
       zoomToShowAttractions,
@@ -72,8 +71,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
           Drag, Scroll, Click
         </div>
 
-        {/* Control Buttons - Bottom Right */}
-        <div className="absolute right-4 bottom-20 z-10 flex flex-col gap-2">
+        {/* Control Buttons - Top Right */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <button
             className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground"
             onClick={toggleFullScreen}
@@ -114,20 +113,90 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
           </div>
         )}
 
+        {/* Fullscreen Tour Dates Bar */}
+        {isFullScreen && (
+          <div className="absolute right-0 bottom-0 left-0 z-20 border-primary/10 border-t bg-background/95 backdrop-blur-md">
+            <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto px-4 py-4">
+              {sortedDates.map((d: TourDate) => (
+                <button
+                  className={`group flex h-24 w-64 flex-shrink-0 cursor-pointer snap-center flex-col justify-between rounded-lg border p-3 text-left transition-all ${
+                    selectedCity?._id === d._id
+                      ? "border-primary/50 bg-foreground/10"
+                      : "border-transparent bg-foreground/5 hover:border-primary/30 hover:bg-foreground/10"
+                  }`}
+                  key={d._id}
+                  onClick={() => {
+                    navigateToCity(d);
+                  }}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="mb-0.5 block font-sans text-foreground text-xs uppercase tracking-widest">
+                        {new Date(d.date).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                        })}
+                        {d.time && (
+                          <span className="ml-2 font-mono normal-case">
+                            {d.time}
+                          </span>
+                        )}
+                      </span>
+                      <h3 className="font-serif text-base text-foreground leading-tight">
+                        {d.city}
+                      </h3>
+                      <p className="line-clamp-1 font-sans text-foreground/60 text-xs">
+                        {d.venue}
+                      </p>
+                    </div>
+                    <a
+                      className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-0 transition-opacity group-hover:opacity-100"
+                      href={d.ticketLink}
+                      onClick={(e) => e.stopPropagation()}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      Tickets
+                    </a>
+                  </div>
+                  {d.description && (
+                    <p className="line-clamp-1 border-primary/20 border-l pl-2 font-serif text-[10px] text-foreground/40 italic">
+                      "{d.description}"
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Selected City Popup */}
         {selectedCity && !selectedAttraction && (
           <div className="absolute right-4 bottom-4 left-4 z-20 animate-fade-in-up rounded-lg border border-primary/30 bg-background/95 p-3 shadow-2xl backdrop-blur-md">
-            <button
-              className="absolute top-2 right-2 opacity-55 transition-colors hover:text-foreground"
-              onClick={() => {
-                setSelectedCity(null);
-                setSelectedAttraction(null);
-              }}
-              type="button"
-            >
-              <X size={16} />
-            </button>
-            <div className="pr-6">
+            {/* Left Navigation Arrow */}
+            {sortedDates.length > 1 && (
+              <button
+                className="absolute top-1/2 left-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                disabled={currentIndex <= 0}
+                onClick={navigateToPrevious}
+                type="button"
+              >
+                <ChevronLeft size={16} />
+              </button>
+            )}
+            {/* Right Navigation Arrow */}
+            {sortedDates.length > 1 && (
+              <button
+                className="absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                disabled={currentIndex >= sortedDates.length - 1}
+                onClick={navigateToNext}
+                type="button"
+              >
+                <ChevronRight size={16} />
+              </button>
+            )}
+            <div className="pr-6 pl-6">
               <div className="mb-2 flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3">
                 <h3 className="font-serif text-foreground text-xl">
                   {selectedCity.city}
