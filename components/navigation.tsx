@@ -77,7 +77,7 @@ export function Navigation() {
         >
           (((O)))
         </Link>
-        <div className="hidden gap-12 font-sans text-foreground/80 text-xs tracking-[0.2em] md:flex">
+        <div className="hidden gap-12 font-sans text-foreground/80 text-xs tracking-[0.2em] md:flex md:justify-end">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -139,8 +139,7 @@ export function Navigation() {
           >
             <div className="flex h-full flex-col">
               {/* Header with close button */}
-              <div className="mb-8 flex items-center justify-between">
-                <h2 className="font-serif text-foreground text-xl">Menu</h2>
+              <div className="mb-8 flex items-center justify-end">
                 <button
                   aria-label="Close mobile menu"
                   className="flex items-center justify-center rounded-lg p-2 text-foreground transition-colors hover:bg-muted"
@@ -154,7 +153,7 @@ export function Navigation() {
               {/* Navigation Items */}
               <nav
                 aria-label="Mobile navigation"
-                className="flex flex-1 flex-col gap-4"
+                className="flex flex-1 flex-col items-end gap-4"
               >
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href;
@@ -167,7 +166,7 @@ export function Navigation() {
                     >
                       {item.label}
                       {isActive && (
-                        <span className="absolute top-0 left-0 h-full w-1 rounded-r bg-foreground" />
+                        <span className="absolute top-0 right-0 h-full w-1 rounded-l bg-foreground" />
                       )}
                     </Link>
                   );
@@ -175,7 +174,7 @@ export function Navigation() {
               </nav>
 
               {/* Footer with theme toggle and admin link */}
-              <div className="mt-auto flex items-center gap-4 border-primary/10 border-t pt-6">
+              <div className="mt-auto flex items-center justify-end gap-4 border-primary/10 border-t pt-6">
                 <ThemeToggle />
                 {showAdminLink && (
                   <Link
