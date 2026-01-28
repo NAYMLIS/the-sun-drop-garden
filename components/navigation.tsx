@@ -150,6 +150,17 @@ export function Navigation() {
                 </button>
               </div>
 
+              {/* Logo/Home Link */}
+              <div className="mb-8 flex items-end justify-end">
+                <Link
+                  className="cursor-pointer font-serif text-2xl text-[#36454F] tracking-widest opacity-[0.44] transition-colors hover:opacity-100"
+                  href="/"
+                  onClick={handleNavClick}
+                >
+                  (((O)))
+                </Link>
+              </div>
+
               {/* Navigation Items */}
               <nav
                 aria-label="Mobile navigation"
