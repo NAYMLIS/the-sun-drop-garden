@@ -174,36 +174,38 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         {/* Selected City Popup */}
         {selectedCity && !selectedAttraction && (
           <div className="absolute right-4 bottom-4 left-4 z-20 animate-fade-in-up rounded-lg border border-primary/30 bg-background/95 p-3 shadow-2xl backdrop-blur-md">
-            {/* Left Navigation Arrow */}
-            {sortedDates.length > 1 && (
-              <button
-                className="absolute top-1/2 left-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                disabled={currentIndex <= 0}
-                onClick={navigateToPrevious}
-                type="button"
-              >
-                <ChevronLeft size={16} />
-              </button>
-            )}
-            {/* Right Navigation Arrow */}
-            {sortedDates.length > 1 && (
-              <button
-                className="absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                disabled={currentIndex >= sortedDates.length - 1}
-                onClick={navigateToNext}
-                type="button"
-              >
-                <ChevronRight size={16} />
-              </button>
-            )}
-            <div className="pr-6 pl-6">
-              <div className="mb-2 flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3">
-                <h3 className="font-serif text-foreground text-xl">
-                  {selectedCity.city}
-                </h3>
-                <p className="flex items-center gap-1 text-foreground/60 text-xs uppercase tracking-widest">
-                  <MapPin size={10} /> {selectedCity.venue}
-                </p>
+            <div className="pr-2 pl-2">
+              <div className="mb-2 flex items-center gap-2">
+                {/* Left Navigation Arrow */}
+                {sortedDates.length > 1 && (
+                  <button
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                    disabled={currentIndex <= 0}
+                    onClick={navigateToPrevious}
+                    type="button"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-1 md:flex-row md:items-center md:gap-3">
+                  <h3 className="font-serif text-foreground text-xl">
+                    {selectedCity.city}
+                  </h3>
+                  <p className="flex items-center gap-1 text-foreground/60 text-xs uppercase tracking-widest">
+                    <MapPin size={10} /> {selectedCity.venue}
+                  </p>
+                </div>
+                {/* Right Navigation Arrow */}
+                {sortedDates.length > 1 && (
+                  <button
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                    disabled={currentIndex >= sortedDates.length - 1}
+                    onClick={navigateToNext}
+                    type="button"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                )}
               </div>
               {selectedCity.address && (
                 <p className="mb-2 text-foreground/50 text-xs">

@@ -62,7 +62,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
         ))}
       </div>
       {/* Map View */}
-      <div className="min-h-[300px] w-full pb-6 md:h-[calc(100vh-12rem)] md:w-2/3">
+      <div className="min-h-[600px] w-full pb-6 md:h-[calc(100vh-12rem)] md:w-2/3">
         <TourMap attractions={attractions} dates={dates} ref={mapRef} />
       </div>
     </div>
