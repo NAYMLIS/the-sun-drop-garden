@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { WebsiteInquiryModal } from "@/components/website-inquiry-modal";
 
 const NAV_ITEMS = [
@@ -13,6 +14,12 @@ const NAV_ITEMS = [
 
 export function Footer() {
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <footer className="border-primary/10 border-t bg-background/80 backdrop-blur-sm">
@@ -80,7 +87,9 @@ export function Footer() {
                   alt="the cloud"
                   height={24}
                   src={
-                    theme === "dark" ? "/thecloud(light).png" : "/thecloud.png"
+                    !mounted || theme === "dark"
+                      ? "/thecloud(light).png"
+                      : "/thecloud.png"
                   }
                   width={100}
                 />
