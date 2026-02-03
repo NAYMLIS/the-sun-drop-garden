@@ -5,13 +5,14 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     try {
+      // Try to query posts - if table doesn't exist, this will throw
       const posts = await ctx.db.query("posts").collect();
 
       if (!Array.isArray(posts)) {
         return [];
       }
 
-      // Filter out any invalid posts and sort safely
+      // Filter out any invalid posts
       const validPosts = posts.filter((post) => {
         try {
           return (
@@ -27,6 +28,7 @@ export const list = query({
         }
       });
 
+      // Sort by createdAt descending (newest first)
       return validPosts.sort((a, b) => {
         try {
           const aTime = a.createdAt || 0;
@@ -38,6 +40,7 @@ export const list = query({
       });
     } catch (error) {
       // Log the error for debugging but return empty array to prevent crashes
+      // This handles cases where the table doesn't exist or schema is mismatched
       console.error("Error fetching posts:", error);
       // Return empty array instead of throwing
       return [];

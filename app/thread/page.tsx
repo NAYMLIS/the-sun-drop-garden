@@ -12,7 +12,13 @@ interface Post {
   fileId?: Id<"_storage">;
   fileUrl?: string;
   linkUrl?: string;
-  linkType?: "youtube" | "soundcloud" | "bandcamp" | "vimeo" | "generic";
+  linkType?:
+    | "youtube"
+    | "soundcloud"
+    | "bandcamp"
+    | "vimeo"
+    | "spotify"
+    | "generic";
   linkTitle?: string;
   linkDescription?: string;
   linkImage?: string;

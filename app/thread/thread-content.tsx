@@ -44,12 +44,22 @@ function formatDate(timestamp: number): string {
 
 export function ThreadContent({ posts: initialPosts }: ThreadContentProps) {
   // Use real-time query for live updates
+  // useQuery can return undefined (loading), null (error), or the data
   const queryResult = useQuery(api.posts.list);
+
   // Handle query errors gracefully - use initialPosts if query fails
   let posts: Post[] = [];
-  if (Array.isArray(queryResult)) {
+  if (queryResult === undefined) {
+    // Still loading, use initialPosts if available
+    posts = Array.isArray(initialPosts) ? initialPosts : [];
+  } else if (queryResult === null) {
+    // Query failed, use initialPosts as fallback
+    posts = Array.isArray(initialPosts) ? initialPosts : [];
+  } else if (Array.isArray(queryResult)) {
+    // Query succeeded
     posts = queryResult;
   } else if (Array.isArray(initialPosts)) {
+    // Fallback to initialPosts
     posts = initialPosts;
   }
 
