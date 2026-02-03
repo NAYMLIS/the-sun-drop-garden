@@ -37,4 +37,11 @@ export default defineSchema({
     message: v.optional(v.string()),
     submittedAt: v.number(),
   }).index("by_submitted", ["submittedAt"]),
+
+  websiteInquiries: defineTable({
+    name: v.string(),
+    email: v.string(),
+    message: v.optional(v.string()),
+    submittedAt: v.number(),
+  }).index("by_submitted", ["submittedAt"]),
 });

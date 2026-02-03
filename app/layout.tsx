@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
+import { Footer } from "@/components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -34,6 +35,31 @@ export const metadata: Metadata = {
   title: "The Sundrop Garden",
   description:
     "An immersive artist website featuring tour dates, music, and visual galleries.",
+  icons: {
+    icon: "/Favicon_TheSundropGarden.png",
+    apple: "/Favicon_TheSundropGarden.png",
+  },
+  openGraph: {
+    title: "The Sundrop Garden",
+    description:
+      "An immersive artist website featuring tour dates, music, and visual galleries.",
+    images: [
+      {
+        url: "/Link Preview (The Sundrop Garden Tour).png",
+        width: 1200,
+        height: 630,
+        alt: "The Sundrop Garden Tour",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Sundrop Garden",
+    description:
+      "An immersive artist website featuring tour dates, music, and visual galleries.",
+    images: ["/Link Preview (The Sundrop Garden Tour).png"],
+  },
 };
 
 export default function RootLayout({
@@ -57,7 +83,10 @@ export default function RootLayout({
           enableSystem
         >
           <ConvexClientProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              {children}
+              <Footer />
+            </ToastProvider>
           </ConvexClientProvider>
         </ThemeProvider>
       </body>

@@ -71,6 +71,266 @@ const ATTRACTION_CATEGORIES: AttractionCategory[] = [
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const exportToCSV = (
+  data: unknown[],
+  filename: string,
+  headers: string[],
+  getRow: (item: unknown) => string[]
+) => {
+  const csvContent = [
+    headers.join(","),
+    ...data.map((item) => {
+      const row = getRow(item);
+      return row
+        .map((cell) => {
+          const cellStr = String(cell ?? "");
+          if (
+            cellStr.includes(",") ||
+            cellStr.includes('"') ||
+            cellStr.includes("\n")
+          ) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        })
+        .join(",");
+    }),
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const createExportSubscriptionsHandler = (
+  emailSubscriptions: unknown[],
+  addToast: (message: string, variant?: "default" | "destructive") => void
+) => {
+  return () => {
+    const date = new Date().toISOString().split("T")[0];
+    exportToCSV(
+      emailSubscriptions,
+      `email-subscriptions-${date}.csv`,
+      ["Name", "Email", "Subscribed Date"],
+      (item) => {
+        const sub = item as {
+          name: string;
+          email: string;
+          subscribedAt: number;
+        };
+        return [
+          sub.name,
+          sub.email,
+          new Date(sub.subscribedAt).toLocaleString(),
+        ];
+      }
+    );
+    addToast("Email subscriptions exported");
+  };
+};
+
+const createExportInquiriesHandler = (
+  inquiries: unknown[],
+  addToast: (message: string, variant?: "default" | "destructive") => void
+) => {
+  return () => {
+    const date = new Date().toISOString().split("T")[0];
+    exportToCSV(
+      inquiries,
+      `inquiries-${date}.csv`,
+      ["Name", "Email", "Inquiry Types", "Message", "Submitted Date"],
+      (item) => {
+        const inquiry = item as {
+          name?: string;
+          email?: string;
+          inquiryTypes: string[];
+          message?: string;
+          submittedAt: number;
+        };
+        return [
+          inquiry.name || "",
+          inquiry.email || "",
+          inquiry.inquiryTypes.join("; "),
+          inquiry.message || "",
+          new Date(inquiry.submittedAt).toLocaleString(),
+        ];
+      }
+    );
+    addToast("Inquiries exported");
+  };
+};
+
+const createExportLeadsHandler = (
+  emailSubscriptions: unknown[],
+  inquiries: unknown[],
+  websiteInquiries: unknown[],
+  addToast: (message: string, variant?: "default" | "destructive") => void
+) => {
+  return () => {
+    const date = new Date().toISOString().split("T")[0];
+    const allLeads: Array<{
+      type: string;
+      name: string;
+      email: string;
+      inquiryTypes?: string[];
+      message?: string;
+      submittedAt: number;
+    }> = [
+      ...emailSubscriptions.map((sub) => ({
+        type: "Email Subscription",
+        name: (sub as { name: string }).name,
+        email: (sub as { email: string }).email,
+        submittedAt: (sub as { subscribedAt: number }).subscribedAt,
+      })),
+      ...inquiries.map((inq) => ({
+        type: "Inquiry",
+        name: (inq as { name?: string }).name || "",
+        email: (inq as { email?: string }).email || "",
+        inquiryTypes: (inq as { inquiryTypes: string[] }).inquiryTypes,
+        message: (inq as { message?: string }).message,
+        submittedAt: (inq as { submittedAt: number }).submittedAt,
+      })),
+      ...websiteInquiries.map((inq) => ({
+        type: "Website Inquiry",
+        name: (inq as { name: string }).name,
+        email: (inq as { email: string }).email,
+        message: (inq as { message?: string }).message,
+        submittedAt: (inq as { submittedAt: number }).submittedAt,
+      })),
+    ].sort((a, b) => b.submittedAt - a.submittedAt);
+
+    exportToCSV(
+      allLeads,
+      `leads-${date}.csv`,
+      ["Type", "Name", "Email", "Inquiry Types", "Message", "Submitted Date"],
+      (item) => {
+        const lead = item as {
+          type: string;
+          name: string;
+          email: string;
+          inquiryTypes?: string[];
+          message?: string;
+          submittedAt: number;
+        };
+        return [
+          lead.type,
+          lead.name || "",
+          lead.email || "",
+          lead.inquiryTypes?.join("; ") || "",
+          lead.message || "",
+          new Date(lead.submittedAt).toLocaleString(),
+        ];
+      }
+    );
+    addToast("Leads exported");
+  };
+};
+
+const createCitySearchHandler = (
+  setCity: (value: string) => void,
+  searchTimeout: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+  setSearchResults: (results: CityResult[]) => void,
+  setShowResults: (show: boolean) => void,
+  setIsSearching: (searching: boolean) => void
+) => {
+  return (query: string) => {
+    setCity(query);
+
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    if (query.length < 3) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        );
+        const data = await response.json();
+        setSearchResults(data);
+        setShowResults(true);
+      } catch (error) {
+        console.error("City search failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+  };
+};
+
+const createAttractionSearchHandler = (
+  setAttractionName: (value: string) => void,
+  attractionSearchTimeout: React.MutableRefObject<ReturnType<
+    typeof setTimeout
+  > | null>,
+  setAttractionSearchResults: (results: CityResult[]) => void,
+  setShowAttractionResults: (show: boolean) => void,
+  setIsAttractionSearching: (searching: boolean) => void
+) => {
+  return (query: string) => {
+    setAttractionName(query);
+
+    if (attractionSearchTimeout.current) {
+      clearTimeout(attractionSearchTimeout.current);
+    }
+    if (query.length < 3) {
+      setAttractionSearchResults([]);
+      setShowAttractionResults(false);
+      return;
+    }
+
+    setIsAttractionSearching(true);
+    attractionSearchTimeout.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        );
+        const data = await response.json();
+        setAttractionSearchResults(data);
+        setShowAttractionResults(true);
+      } catch (error) {
+        console.error("Attraction search failed:", error);
+      } finally {
+        setIsAttractionSearching(false);
+      }
+    }, 500);
+  };
+};
+
+const createDeleteHandler = <T,>(
+  itemToDelete: T | null,
+  deleteFn: () => Promise<void>,
+  cleanupFn: () => void,
+  successFn: () => void,
+  errorFn: () => void
+) => {
+  return async () => {
+    if (!itemToDelete) {
+      return;
+    }
+    try {
+      await deleteFn();
+      cleanupFn();
+      successFn();
+    } catch (error) {
+      console.error("Delete failed:", error);
+      errorFn();
+    }
+  };
+};
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Admin panel requires handling multiple forms, dialogs, and data management
 export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   const [activeTab, setActiveTab] = useState<"tour" | "connect">("tour");
 
@@ -113,9 +373,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   const removeTourDate = useMutation(api.tourDates.remove);
   const addAttraction = useMutation(api.attractions.add);
   const removeAttraction = useMutation(api.attractions.remove);
+  const removeEmailSubscription = useMutation(
+    api.forms.removeEmailSubscription
+  );
+  const removeInquiry = useMutation(api.forms.removeInquiry);
+  const removeWebsiteInquiry = useMutation(api.forms.removeWebsiteInquiry);
   const attractions = useQuery(api.attractions.list) || [];
   const emailSubscriptions = useQuery(api.forms.listEmailSubscriptions) || [];
   const inquiries = useQuery(api.forms.listInquiries) || [];
+  const websiteInquiries = useQuery(api.forms.listWebsiteInquiries) || [];
   const { addToast } = useToast();
 
   // Email forwarding state (stored in localStorage)
@@ -163,90 +429,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
     addToast("Email removed");
   };
 
-  const exportToCSV = (
-    data: unknown[],
-    filename: string,
-    headers: string[],
-    getRow: (item: unknown) => string[]
-  ) => {
-    const csvContent = [
-      headers.join(","),
-      ...data.map((item) => {
-        const row = getRow(item);
-        return row
-          .map((cell) => {
-            const cellStr = String(cell ?? "");
-            if (
-              cellStr.includes(",") ||
-              cellStr.includes('"') ||
-              cellStr.includes("\n")
-            ) {
-              return `"${cellStr.replace(/"/g, '""')}"`;
-            }
-            return cellStr;
-          })
-          .join(",");
-      }),
-    ].join("\n");
+  const handleExportSubscriptions = createExportSubscriptionsHandler(
+    emailSubscriptions,
+    addToast
+  );
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleExportInquiries = createExportInquiriesHandler(
+    inquiries,
+    addToast
+  );
 
-  const handleExportSubscriptions = () => {
-    const date = new Date().toISOString().split("T")[0];
-    exportToCSV(
-      emailSubscriptions,
-      `email-subscriptions-${date}.csv`,
-      ["Name", "Email", "Subscribed Date"],
-      (item) => {
-        const sub = item as {
-          name: string;
-          email: string;
-          subscribedAt: number;
-        };
-        return [
-          sub.name,
-          sub.email,
-          new Date(sub.subscribedAt).toLocaleString(),
-        ];
-      }
-    );
-    addToast("Email subscriptions exported");
-  };
-
-  const handleExportInquiries = () => {
-    const date = new Date().toISOString().split("T")[0];
-    exportToCSV(
-      inquiries,
-      `inquiries-${date}.csv`,
-      ["Name", "Email", "Inquiry Types", "Message", "Submitted Date"],
-      (item) => {
-        const inquiry = item as {
-          name?: string;
-          email?: string;
-          inquiryTypes: string[];
-          message?: string;
-          submittedAt: number;
-        };
-        return [
-          inquiry.name || "",
-          inquiry.email || "",
-          inquiry.inquiryTypes.join("; "),
-          inquiry.message || "",
-          new Date(inquiry.submittedAt).toLocaleString(),
-        ];
-      }
-    );
-    addToast("Inquiries exported");
-  };
+  const handleExportLeads = createExportLeadsHandler(
+    emailSubscriptions,
+    inquiries,
+    websiteInquiries,
+    addToast
+  );
 
   // Dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -273,35 +471,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   const [newTicketLinkValue, setNewTicketLinkValue] = useState("");
   const [newTimeValue, setNewTimeValue] = useState("");
   const [currentTourDateIndex, setCurrentTourDateIndex] = useState<number>(0);
+  const [
+    showEmailSubscriptionDeleteDialog,
+    setShowEmailSubscriptionDeleteDialog,
+  ] = useState(false);
+  const [emailSubscriptionToDelete, setEmailSubscriptionToDelete] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
+  const [showInquiryDeleteDialog, setShowInquiryDeleteDialog] = useState(false);
+  const [inquiryToDelete, setInquiryToDelete] = useState<{
+    id: string;
+    name?: string;
+    email?: string;
+  } | null>(null);
+  const [showWebsiteInquiryDeleteDialog, setShowWebsiteInquiryDeleteDialog] =
+    useState(false);
+  const [websiteInquiryToDelete, setWebsiteInquiryToDelete] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
 
-  const handleCitySearch = (query: string) => {
-    setCity(query);
-
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
-    if (query.length < 3) {
-      setSearchResults([]);
-      setShowResults(false);
-      return;
-    }
-
-    setIsSearching(true);
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
-        );
-        const data = await response.json();
-        setSearchResults(data);
-        setShowResults(true);
-      } catch (error) {
-        console.error("City search failed:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 500);
-  };
+  const handleCitySearch = createCitySearchHandler(
+    setCity,
+    searchTimeout,
+    setSearchResults,
+    setShowResults,
+    setIsSearching
+  );
 
   const selectCity = (result: CityResult) => {
     // Try to extract a clean city name
@@ -355,34 +554,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
     }
   };
 
-  const handleAttractionSearch = (query: string) => {
-    setAttractionName(query);
-
-    if (attractionSearchTimeout.current) {
-      clearTimeout(attractionSearchTimeout.current);
-    }
-    if (query.length < 3) {
-      setAttractionSearchResults([]);
-      setShowAttractionResults(false);
-      return;
-    }
-
-    setIsAttractionSearching(true);
-    attractionSearchTimeout.current = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
-        );
-        const data = await response.json();
-        setAttractionSearchResults(data);
-        setShowAttractionResults(true);
-      } catch (error) {
-        console.error("Attraction search failed:", error);
-      } finally {
-        setIsAttractionSearching(false);
-      }
-    }, 500);
-  };
+  const handleAttractionSearch = createAttractionSearchHandler(
+    setAttractionName,
+    attractionSearchTimeout,
+    setAttractionSearchResults,
+    setShowAttractionResults,
+    setIsAttractionSearching
+  );
 
   const selectAttractionLocation = (result: CityResult) => {
     setAttractionName(
@@ -480,41 +658,93 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!attractionToDelete) {
-      return;
-    }
-    try {
+  const handleDeleteConfirm = createDeleteHandler(
+    attractionToDelete,
+    async () => {
+      if (!attractionToDelete) {
+        return;
+      }
       await removeAttraction({
         id: attractionToDelete.id as Id<"attractions">,
       });
+    },
+    () => {
       setShowDeleteDialog(false);
       setAttractionToDelete(null);
-      addToast("Attraction deleted successfully");
-    } catch (error) {
-      console.error("Failed to remove attraction:", error);
-      addToast("Failed to delete attraction", "destructive");
-    }
-  };
+    },
+    () => addToast("Attraction deleted successfully"),
+    () => addToast("Failed to delete attraction", "destructive")
+  );
 
-  const handleTourDateDeleteConfirm = async () => {
-    if (!tourDateToDelete) {
-      return;
-    }
-    try {
-      await removeTourDate({
-        id: tourDateToDelete.id as Id<"tourDates">,
-      });
+  const handleTourDateDeleteConfirm = createDeleteHandler(
+    tourDateToDelete,
+    async () => {
+      if (!tourDateToDelete) {
+        return;
+      }
+      await removeTourDate({ id: tourDateToDelete.id as Id<"tourDates"> });
+    },
+    () => {
       setShowTourDateDeleteDialog(false);
       setTourDateToDelete(null);
       setShowAddressDialog(false);
       setAddressDialogData(null);
-      addToast("Tour date deleted successfully");
-    } catch (error) {
-      console.error("Failed to remove tour date:", error);
-      addToast("Failed to delete tour date", "destructive");
-    }
-  };
+    },
+    () => addToast("Tour date deleted successfully"),
+    () => addToast("Failed to delete tour date", "destructive")
+  );
+
+  const handleEmailSubscriptionDeleteConfirm = createDeleteHandler(
+    emailSubscriptionToDelete,
+    async () => {
+      if (!emailSubscriptionToDelete) {
+        return;
+      }
+      await removeEmailSubscription({
+        id: emailSubscriptionToDelete.id as Id<"emailSubscriptions">,
+      });
+    },
+    () => {
+      setShowEmailSubscriptionDeleteDialog(false);
+      setEmailSubscriptionToDelete(null);
+    },
+    () => addToast("Email subscription deleted successfully"),
+    () => addToast("Failed to delete email subscription", "destructive")
+  );
+
+  const handleInquiryDeleteConfirm = createDeleteHandler(
+    inquiryToDelete,
+    async () => {
+      if (!inquiryToDelete) {
+        return;
+      }
+      await removeInquiry({ id: inquiryToDelete.id as Id<"inquiries"> });
+    },
+    () => {
+      setShowInquiryDeleteDialog(false);
+      setInquiryToDelete(null);
+    },
+    () => addToast("Inquiry deleted successfully"),
+    () => addToast("Failed to delete inquiry", "destructive")
+  );
+
+  const handleWebsiteInquiryDeleteConfirm = createDeleteHandler(
+    websiteInquiryToDelete,
+    async () => {
+      if (!websiteInquiryToDelete) {
+        return;
+      }
+      await removeWebsiteInquiry({
+        id: websiteInquiryToDelete.id as Id<"websiteInquiries">,
+      });
+    },
+    () => {
+      setShowWebsiteInquiryDeleteDialog(false);
+      setWebsiteInquiryToDelete(null);
+    },
+    () => addToast("Website inquiry deleted successfully"),
+    () => addToast("Failed to delete website inquiry", "destructive")
+  );
 
   const navigateToTourDate = (index: number) => {
     if (index < 0 || index >= dates.length) {
@@ -1246,6 +1476,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
                           {new Date(sub.subscribedAt).toLocaleString()}
                         </div>
                       </div>
+                      <button
+                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                        onClick={() => {
+                          setEmailSubscriptionToDelete({
+                            id: sub._id,
+                            name: sub.name,
+                            email: sub.email,
+                          });
+                          setShowEmailSubscriptionDeleteDialog(true);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1277,46 +1521,309 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
                     className="rounded-lg border border-primary/10 bg-foreground/5 p-4"
                     key={inquiry._id}
                   >
-                    <div className="flex-1">
-                      {(inquiry.name || inquiry.email) && (
-                        <div className="mb-2">
-                          {inquiry.name && (
-                            <div className="font-serif text-foreground text-lg">
-                              {inquiry.name}
-                            </div>
-                          )}
-                          {inquiry.email && (
-                            <div className="text-foreground/70 text-sm">
-                              {inquiry.email}
-                            </div>
-                          )}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        {(inquiry.name || inquiry.email) && (
+                          <div className="mb-2">
+                            {inquiry.name && (
+                              <div className="font-serif text-foreground text-lg">
+                                {inquiry.name}
+                              </div>
+                            )}
+                            {inquiry.email && (
+                              <div className="text-foreground/70 text-sm">
+                                {inquiry.email}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="mb-2 flex flex-wrap gap-2">
+                          {inquiry.inquiryTypes.map((type) => (
+                            <span
+                              className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs"
+                              key={type}
+                            >
+                              {type}
+                            </span>
+                          ))}
                         </div>
-                      )}
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        {inquiry.inquiryTypes.map((type) => (
-                          <span
-                            className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs"
-                            key={type}
-                          >
-                            {type}
-                          </span>
-                        ))}
+                        {inquiry.message && (
+                          <p className="mb-2 line-clamp-2 text-foreground/60 text-sm">
+                            {inquiry.message}
+                          </p>
+                        )}
+                        <div className="text-foreground/50 text-xs">
+                          Submitted:{" "}
+                          {new Date(inquiry.submittedAt).toLocaleString()}
+                        </div>
                       </div>
-                      {inquiry.message && (
-                        <p className="mb-2 line-clamp-2 text-foreground/60 text-sm">
-                          {inquiry.message}
-                        </p>
-                      )}
-                      <div className="text-foreground/50 text-xs">
-                        Submitted:{" "}
-                        {new Date(inquiry.submittedAt).toLocaleString()}
-                      </div>
+                      <button
+                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                        onClick={() => {
+                          setInquiryToDelete({
+                            id: inquiry._id,
+                            name: inquiry.name,
+                            email: inquiry.email,
+                          });
+                          setShowInquiryDeleteDialog(true);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Leads Section */}
+          <div className="border-primary/20 border-t pt-12">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-serif text-foreground text-xl">Leads</h3>
+              <Button
+                className="flex items-center gap-2 border border-primary/20 bg-background/50 text-foreground hover:bg-primary/10"
+                onClick={handleExportLeads}
+                type="button"
+              >
+                <Download size={16} />
+                Export CSV
+              </Button>
+            </div>
+            {emailSubscriptions.length === 0 &&
+            inquiries.length === 0 &&
+            websiteInquiries.length === 0 ? (
+              <p className="text-foreground/40 text-sm italic">No leads yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {/* Email Subscriptions as Leads */}
+                {emailSubscriptions.map((sub) => (
+                  <div
+                    className="rounded-lg border border-primary/10 bg-foreground/5 p-4"
+                    key={`sub-${sub._id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs">
+                            Email Subscription
+                          </span>
+                        </div>
+                        <div className="mb-1 font-serif text-foreground text-lg">
+                          {sub.name}
+                        </div>
+                        <div className="text-foreground/70 text-sm">
+                          {sub.email}
+                        </div>
+                        <div className="mt-2 text-foreground/50 text-xs">
+                          Subscribed:{" "}
+                          {new Date(sub.subscribedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <button
+                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                        onClick={() => {
+                          setEmailSubscriptionToDelete({
+                            id: sub._id,
+                            name: sub.name,
+                            email: sub.email,
+                          });
+                          setShowEmailSubscriptionDeleteDialog(true);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {/* Inquiries as Leads */}
+                {inquiries.map((inquiry) => (
+                  <div
+                    className="rounded-lg border border-primary/10 bg-foreground/5 p-4"
+                    key={`inq-${inquiry._id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="mb-2 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs">
+                            Inquiry
+                          </span>
+                          {inquiry.inquiryTypes.map((type) => (
+                            <span
+                              className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs"
+                              key={type}
+                            >
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                        {(inquiry.name || inquiry.email) && (
+                          <div className="mb-2">
+                            {inquiry.name && (
+                              <div className="font-serif text-foreground text-lg">
+                                {inquiry.name}
+                              </div>
+                            )}
+                            {inquiry.email && (
+                              <div className="text-foreground/70 text-sm">
+                                {inquiry.email}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {inquiry.message && (
+                          <p className="mb-2 line-clamp-2 text-foreground/60 text-sm">
+                            {inquiry.message}
+                          </p>
+                        )}
+                        <div className="text-foreground/50 text-xs">
+                          Submitted:{" "}
+                          {new Date(inquiry.submittedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <button
+                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                        onClick={() => {
+                          setInquiryToDelete({
+                            id: inquiry._id,
+                            name: inquiry.name,
+                            email: inquiry.email,
+                          });
+                          setShowInquiryDeleteDialog(true);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {/* Website Inquiries as Leads */}
+                {websiteInquiries.map((inquiry) => (
+                  <div
+                    className="rounded-lg border border-primary/10 bg-foreground/5 p-4"
+                    key={`web-${inquiry._id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="rounded-full bg-primary/20 px-2 py-1 text-foreground/80 text-xs">
+                            Website Inquiry
+                          </span>
+                        </div>
+                        <div className="mb-1 font-serif text-foreground text-lg">
+                          {inquiry.name}
+                        </div>
+                        <div className="text-foreground/70 text-sm">
+                          {inquiry.email}
+                        </div>
+                        {inquiry.message && (
+                          <p className="mt-2 mb-2 line-clamp-2 text-foreground/60 text-sm">
+                            {inquiry.message}
+                          </p>
+                        )}
+                        <div className="text-foreground/50 text-xs">
+                          Submitted:{" "}
+                          {new Date(inquiry.submittedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <button
+                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                        onClick={() => {
+                          setWebsiteInquiryToDelete({
+                            id: inquiry._id,
+                            name: inquiry.name,
+                            email: inquiry.email,
+                          });
+                          setShowWebsiteInquiryDeleteDialog(true);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Email Subscription Delete Dialog */}
+          <AlertDialog
+            onOpenChange={setShowEmailSubscriptionDeleteDialog}
+            open={showEmailSubscriptionDeleteDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Email Subscription</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the email subscription for{" "}
+                  {emailSubscriptionToDelete?.name} (
+                  {emailSubscriptionToDelete?.email})? This action cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleEmailSubscriptionDeleteConfirm}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Inquiry Delete Dialog */}
+          <AlertDialog
+            onOpenChange={setShowInquiryDeleteDialog}
+            open={showInquiryDeleteDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this inquiry
+                  {inquiryToDelete?.name || inquiryToDelete?.email
+                    ? ` from ${inquiryToDelete.name || inquiryToDelete.email}`
+                    : ""}
+                  ? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleInquiryDeleteConfirm}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Website Inquiry Delete Dialog */}
+          <AlertDialog
+            onOpenChange={setShowWebsiteInquiryDeleteDialog}
+            open={showWebsiteInquiryDeleteDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Website Inquiry</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the website inquiry from{" "}
+                  {websiteInquiryToDelete?.name} (
+                  {websiteInquiryToDelete?.email})? This action cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleWebsiteInquiryDeleteConfirm}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Email Forwarding Configuration */}
           <div className="border-primary/20 border-t pt-12">

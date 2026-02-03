@@ -62,3 +62,56 @@ export const addInquiry = mutation({
     return id;
   },
 });
+
+export const submitWebsiteInquiry = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    message: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("websiteInquiries", {
+      name: args.name,
+      email: args.email,
+      message: args.message,
+      submittedAt: Date.now(),
+    });
+
+    return id;
+  },
+});
+
+export const listWebsiteInquiries = query({
+  args: {},
+  handler: async (ctx) => {
+    const inquiries = await ctx.db.query("websiteInquiries").collect();
+    return inquiries.sort((a, b) => b.submittedAt - a.submittedAt);
+  },
+});
+
+export const removeEmailSubscription = mutation({
+  args: {
+    id: v.id("emailSubscriptions"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const removeInquiry = mutation({
+  args: {
+    id: v.id("inquiries"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const removeWebsiteInquiry = mutation({
+  args: {
+    id: v.id("websiteInquiries"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
