@@ -6,6 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
   getBandcampEmbedUrl,
   getSoundCloudEmbedUrl,
+  getSpotifyEmbedUrl,
   getVimeoEmbedUrl,
   getYouTubeEmbedUrl,
 } from "@/lib/media-utils";
@@ -68,6 +69,34 @@ export function BandcampEmbed({ url }: BandcampEmbedProps) {
         src={embedUrl}
         title="Bandcamp player"
       />
+    </div>
+  );
+}
+
+interface SpotifyEmbedProps {
+  url: string;
+}
+
+export function SpotifyEmbed({ url }: SpotifyEmbedProps) {
+  const embedUrl = getSpotifyEmbedUrl(url);
+  if (!embedUrl) {
+    return <GenericLink url={url} />;
+  }
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-lg border border-primary/20 bg-background">
+      <div className="relative h-[352px] w-full overflow-hidden">
+        <iframe
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          className="absolute inset-0 h-full w-full scale-[1.02] border-0"
+          loading="lazy"
+          src={embedUrl}
+          style={{
+            backgroundColor: "transparent",
+          }}
+          title="Spotify player"
+        />
+      </div>
     </div>
   );
 }
@@ -231,7 +260,13 @@ export function MediaFile({ fileId, fileUrl, mediaType }: MediaFileProps) {
 
 interface PostMediaProps {
   mediaType: "image" | "audio" | "video" | "link" | null;
-  linkType?: "youtube" | "soundcloud" | "bandcamp" | "vimeo" | "generic";
+  linkType?:
+    | "youtube"
+    | "soundcloud"
+    | "bandcamp"
+    | "vimeo"
+    | "spotify"
+    | "generic";
   linkUrl?: string;
   linkTitle?: string;
   linkDescription?: string;
@@ -262,6 +297,8 @@ export function PostMedia({
         return <BandcampEmbed url={linkUrl} />;
       case "vimeo":
         return <VimeoEmbed url={linkUrl} />;
+      case "spotify":
+        return <SpotifyEmbed url={linkUrl} />;
       default:
         return (
           <GenericLink

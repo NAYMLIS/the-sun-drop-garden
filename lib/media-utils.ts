@@ -3,6 +3,7 @@ export type LinkType =
   | "soundcloud"
   | "bandcamp"
   | "vimeo"
+  | "spotify"
   | "generic";
 
 // Regex patterns - defined at top level for performance
@@ -15,6 +16,7 @@ const YOUTUBE_PATTERNS = [
 const SOUNDCLOUD_REGEX = /^(https?:\/\/)?(www\.)?soundcloud\.com/i;
 const BANDCAMP_REGEX = /^(https?:\/\/)?[^.]+\.bandcamp\.com/i;
 const VIMEO_REGEX = /^(https?:\/\/)?(www\.)?vimeo\.com/i;
+const SPOTIFY_REGEX = /^(https?:\/\/)?(open\.)?spotify\.com/i;
 const YOUTUBE_ID_PATTERNS = [
   /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/i,
   /youtube\.com\/embed\/([^&\n?#]+)/i,
@@ -23,6 +25,8 @@ const YOUTUBE_ID_PATTERNS = [
 const SOUNDCLOUD_PATH_REGEX = /soundcloud\.com\/(.+)/i;
 const BANDCAMP_PATH_REGEX = /bandcamp\.com\/(.+)/i;
 const VIMEO_ID_PATTERNS = [/vimeo\.com\/(\d+)/i, /vimeo\.com\/video\/(\d+)/i];
+const SPOTIFY_ID_PATTERN =
+  /spotify\.com\/(track|album|playlist|artist)\/([a-zA-Z0-9]+)/i;
 
 /**
  * Normalizes a URL by adding https:// if no protocol is present
@@ -54,6 +58,9 @@ export function detectLinkType(url: string): LinkType {
   if (isVimeoUrl(normalized)) {
     return "vimeo";
   }
+  if (isSpotifyUrl(normalized)) {
+    return "spotify";
+  }
   return "generic";
 }
 
@@ -71,6 +78,10 @@ export function isBandcampUrl(url: string): boolean {
 
 export function isVimeoUrl(url: string): boolean {
   return VIMEO_REGEX.test(url);
+}
+
+export function isSpotifyUrl(url: string): boolean {
+  return SPOTIFY_REGEX.test(url);
 }
 
 export function extractYouTubeId(url: string): string | null {
@@ -136,4 +147,28 @@ export function getVimeoEmbedUrl(url: string): string | null {
     return null;
   }
   return `https://player.vimeo.com/video/${videoId}`;
+}
+
+export function extractSpotifyId(url: string): {
+  type: "track" | "album" | "playlist" | "artist";
+  id: string;
+} | null {
+  // Spotify URLs: open.spotify.com/track/ID, open.spotify.com/album/ID, etc.
+  const match = url.match(SPOTIFY_ID_PATTERN);
+  if (match?.[1] && match?.[2]) {
+    return {
+      type: match[1].toLowerCase() as "track" | "album" | "playlist" | "artist",
+      id: match[2],
+    };
+  }
+
+  return null;
+}
+
+export function getSpotifyEmbedUrl(url: string): string | null {
+  const spotifyData = extractSpotifyId(url);
+  if (!spotifyData) {
+    return null;
+  }
+  return `https://open.spotify.com/embed/${spotifyData.type}/${spotifyData.id}?utm_source=generator`;
 }

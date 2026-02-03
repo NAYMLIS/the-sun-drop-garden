@@ -64,6 +64,7 @@ export const add = mutation({
         v.literal("soundcloud"),
         v.literal("bandcamp"),
         v.literal("vimeo"),
+        v.literal("spotify"),
         v.literal("generic")
       )
     ),
@@ -117,6 +118,7 @@ export const update = mutation({
         v.literal("soundcloud"),
         v.literal("bandcamp"),
         v.literal("vimeo"),
+        v.literal("spotify"),
         v.literal("generic")
       )
     ),

@@ -63,6 +63,7 @@ export default defineSchema({
         v.literal("soundcloud"),
         v.literal("bandcamp"),
         v.literal("vimeo"),
+        v.literal("spotify"),
         v.literal("generic")
       )
     ),

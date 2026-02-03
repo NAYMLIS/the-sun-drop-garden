@@ -839,6 +839,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
         | "soundcloud"
         | "bandcamp"
         | "vimeo"
+        | "spotify"
         | "generic"
         | undefined;
 
@@ -1190,13 +1191,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
                     }
                     if (post.mediaType === "link" && post.linkImage) {
                       return (
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded border border-primary/20">
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded border border-primary/20 bg-foreground/5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           {/* biome-ignore lint/performance/noImgElement: Link preview image, dimensions unknown */}
                           {/* biome-ignore lint/correctness/useImageSize: Link image dimensions unknown */}
                           <img
                             alt="Link preview"
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain"
                             src={post.linkImage}
                           />
                         </div>
