@@ -4,6 +4,7 @@ import { Lock, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_ITEMS = [
@@ -55,13 +56,11 @@ export function Navigation() {
   return (
     <>
       <nav className="fixed top-0 right-0 left-0 z-50 flex items-center justify-between border-primary/10 border-b bg-background/80 px-8 py-6 backdrop-blur-sm">
-        <Link
-          className="cursor-pointer font-serif text-2xl text-[#36454F] tracking-widest opacity-[0.44] transition-colors hover:opacity-100"
-          href="/"
+        <Logo
+          className="opacity-[0.44] transition-opacity hover:opacity-100"
           onClick={handleNavClick}
-        >
-          (((O)))
-        </Link>
+          size="small"
+        />
         <div className="hidden gap-12 font-sans text-foreground/80 text-xs tracking-[0.2em] md:flex md:justify-end">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
@@ -135,13 +134,11 @@ export function Navigation() {
 
               {/* Logo/Home Link */}
               <div className="mb-8 flex items-end justify-end">
-                <Link
-                  className="cursor-pointer font-serif text-2xl text-[#36454F] tracking-widest opacity-[0.44] transition-colors hover:opacity-100"
-                  href="/"
+                <Logo
+                  className="opacity-[0.44] transition-opacity hover:opacity-100"
                   onClick={handleNavClick}
-                >
-                  (((O)))
-                </Link>
+                  size="small"
+                />
               </div>
 
               {/* Navigation Items */}

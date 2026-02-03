@@ -38,9 +38,10 @@ function formatDate(timestamp: number): string {
 
 export function ThreadContent({ posts: initialPosts }: ThreadContentProps) {
   // Use real-time query for live updates
-  const posts = useQuery(api.posts.list) || initialPosts;
+  const queryResult = useQuery(api.posts.list);
+  const posts = (queryResult ?? initialPosts) || [];
 
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <p className="text-center text-foreground/40 text-lg italic">

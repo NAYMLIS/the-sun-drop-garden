@@ -6,7 +6,11 @@ export const list = query({
   handler: async (ctx) => {
     try {
       const posts = await ctx.db.query("posts").collect();
-      return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      return posts.sort((a, b) => {
+        const aTime = typeof a.createdAt === "number" ? a.createdAt : 0;
+        const bTime = typeof b.createdAt === "number" ? b.createdAt : 0;
+        return bTime - aTime;
+      });
     } catch (error) {
       console.error("Error fetching posts:", error);
       return [];
@@ -89,6 +93,10 @@ export const update = mutation({
         v.literal("generic")
       )
     ),
+    linkTitle: v.optional(v.string()),
+    linkDescription: v.optional(v.string()),
+    linkImage: v.optional(v.string()),
+    linkFavicon: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

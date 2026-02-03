@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/logo";
 import { WebsiteInquiryModal } from "@/components/website-inquiry-modal";
 
 const NAV_ITEMS = [
@@ -27,12 +28,10 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
           {/* Brand Section */}
           <div className="flex flex-col gap-4">
-            <Link
-              className="cursor-pointer font-serif text-2xl text-[#36454F] tracking-widest opacity-[0.44] transition-colors hover:opacity-100"
-              href="/"
-            >
-              (((O)))
-            </Link>
+            <Logo
+              className="opacity-[0.44] transition-opacity hover:opacity-100"
+              size="small"
+            />
             <p className="text-foreground/60 text-sm">The Sundrop Garden</p>
           </div>
 

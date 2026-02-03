@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { Navigation } from "@/components/navigation";
 
 export default function Home({
@@ -16,9 +17,9 @@ export default function Home({
           {/* Background Ambience */}
           <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-card/20 via-background to-background" />
           <div className="z-10 animate-fade-in-up px-4 text-center">
-            <h1 className="mb-6 pb-6 font-serif text-6xl text-[#36454F] tracking-tighter opacity-[0.44] md:text-9xl">
-              (((O)))
-            </h1>
+            <div className="mb-6 flex justify-center pb-6 opacity-[0.0777]">
+              <Logo asLink={false} size="large" />
+            </div>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 className="inline-block rounded-full bg-transparent px-8 py-3 text-foreground text-sm uppercase tracking-widest transition-all duration-500 hover:text-foreground"
