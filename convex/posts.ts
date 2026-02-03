@@ -4,8 +4,13 @@ import { mutation, query } from "./_generated/server";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const posts = await ctx.db.query("posts").collect();
-    return posts.sort((a, b) => b.createdAt - a.createdAt);
+    try {
+      const posts = await ctx.db.query("posts").collect();
+      return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      return [];
+    }
   },
 });
 
