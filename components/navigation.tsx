@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_ITEMS = [
   { label: "TOUR", href: "/tour" },
+  { label: "THREAD", href: "/thread" },
   { label: "LIGHT", href: "/light" },
   { label: "SOUND", href: "/sound" },
   { label: "CONNECT", href: "/connect" },

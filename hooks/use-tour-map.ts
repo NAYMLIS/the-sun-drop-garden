@@ -130,8 +130,8 @@ export function useTourMap({
     setSelectedAttraction(null);
     setShowAttractionTags(false);
 
-    // First click: zoom to level 6, second click: zoom to level 8
-    const targetZoom = isSecondClick ? 8 : 6;
+    // First click: zoom to level 8, second click: zoom to level 10
+    const targetZoom = isSecondClick ? 10 : 8;
 
     // Stop any ongoing animation and immediately start new one
     mapRef.current.stop();
@@ -162,11 +162,39 @@ export function useTourMap({
 
     setSelectedAttraction(attraction);
 
-    // Stop any ongoing animation and zoom to attraction location
+    const currentZoom = mapRef.current.getZoom();
+
+    // If already zoomed in (>= 13), just pan smoothly without changing zoom
+    // Then zoom in to 15 if not already there
+    if (currentZoom >= 13) {
+      mapRef.current.stop();
+      mapRef.current.flyTo({
+        center: [attraction.lng, attraction.lat],
+        zoom: currentZoom,
+        duration: 400,
+        essential: true,
+      });
+      // Zoom in to close-up if not already at 15
+      if (currentZoom < 15) {
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.flyTo({
+              center: [attraction.lng, attraction.lat],
+              zoom: 15,
+              duration: 300,
+              essential: true,
+            });
+          }
+        }, 400);
+      }
+      return;
+    }
+
+    // If zoomed out, zoom in directly to close-up
     mapRef.current.stop();
     mapRef.current.flyTo({
       center: [attraction.lng, attraction.lat],
-      zoom: 9,
+      zoom: 15,
       duration: 600,
       essential: true,
     });

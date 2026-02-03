@@ -160,6 +160,23 @@
   animation: fade-in 0.8s ease-out;
 }
 
+@keyframes swipe {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-8px) rotate(-10deg);
+  }
+  75% {
+    transform: translateX(8px) rotate(10deg);
+  }
+}
+
+.animate-swipe {
+  animation: swipe 1.5s ease-in-out infinite;
+}
+
 /* Scrollbar hiding */
 .scrollbar-hide {
   -ms-overflow-style: none;

@@ -44,4 +44,32 @@ export default defineSchema({
     message: v.optional(v.string()),
     submittedAt: v.number(),
   }).index("by_submitted", ["submittedAt"]),
+
+  posts: defineTable({
+    caption: v.optional(v.string()),
+    mediaType: v.union(
+      v.literal("image"),
+      v.literal("audio"),
+      v.literal("video"),
+      v.literal("link"),
+      v.null()
+    ),
+    fileId: v.optional(v.id("_storage")),
+    fileUrl: v.optional(v.string()),
+    linkUrl: v.optional(v.string()),
+    linkType: v.optional(
+      v.union(
+        v.literal("youtube"),
+        v.literal("soundcloud"),
+        v.literal("bandcamp"),
+        v.literal("vimeo"),
+        v.literal("generic")
+      )
+    ),
+    linkTitle: v.optional(v.string()),
+    linkDescription: v.optional(v.string()),
+    linkImage: v.optional(v.string()),
+    linkFavicon: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_createdAt", ["createdAt"]),
 });

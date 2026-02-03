@@ -5,15 +5,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Image as ImageIcon,
+  Link as LinkIcon,
   Mail,
   MapPin,
+  Music,
   Plus,
   Search,
   Trash2,
+  Video,
   X,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { GenericLink } from "@/components/media-embed";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { detectLinkType, normalizeUrl } from "@/lib/media-utils";
 import type { AttractionCategory, TourDate } from "@/lib/types";
 
 interface AdminPanelProps {
@@ -332,7 +338,9 @@ const createDeleteHandler = <T,>(
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Admin panel requires handling multiple forms, dialogs, and data management
 export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
-  const [activeTab, setActiveTab] = useState<"tour" | "connect">("tour");
+  const [activeTab, setActiveTab] = useState<"thread" | "tour" | "connect">(
+    "thread"
+  );
 
   const [city, setCity] = useState("");
   const [venue, setVenue] = useState("");
@@ -368,6 +376,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   const [showResults, setShowResults] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Post form state
+  const [postCaption, setPostCaption] = useState("");
+  const [postFile, setPostFile] = useState<File | null>(null);
+  const [postFilePreview, setPostFilePreview] = useState<string | null>(null);
+  const [postLinkUrl, setPostLinkUrl] = useState("");
+  const [linkPreview, setLinkPreview] = useState<{
+    title?: string;
+    description?: string;
+    image?: string;
+    favicon?: string;
+  } | null>(null);
+  const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<{
+    id: string;
+    caption?: string;
+  } | null>(null);
+  const [showPostDeleteDialog, setShowPostDeleteDialog] = useState(false);
+
   const addTourDate = useMutation(api.tourDates.add);
   const updateTourDate = useMutation(api.tourDates.update);
   const removeTourDate = useMutation(api.tourDates.remove);
@@ -382,6 +409,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   const emailSubscriptions = useQuery(api.forms.listEmailSubscriptions) || [];
   const inquiries = useQuery(api.forms.listInquiries) || [];
   const websiteInquiries = useQuery(api.forms.listWebsiteInquiries) || [];
+  const posts = useQuery(api.posts.list) || [];
+  const addPost = useMutation(api.posts.add);
+  const removePost = useMutation(api.posts.remove);
+  const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
   const { addToast } = useToast();
 
   // Email forwarding state (stored in localStorage)
@@ -398,6 +429,49 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
       }
     }
   }, []);
+
+  // Cleanup file preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (postFilePreview) {
+        URL.revokeObjectURL(postFilePreview);
+      }
+    };
+  }, [postFilePreview]);
+
+  // Fetch link preview when URL changes
+  useEffect(() => {
+    const fetchPreview = async () => {
+      if (!postLinkUrl || postLinkUrl.trim().length < 3) {
+        setLinkPreview(null);
+        return;
+      }
+
+      const normalized = normalizeUrl(postLinkUrl);
+      setIsFetchingPreview(true);
+
+      try {
+        const response = await fetch(
+          `/api/link-preview?url=${encodeURIComponent(normalized)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setLinkPreview(data);
+        } else {
+          setLinkPreview(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch link preview:", error);
+        setLinkPreview(null);
+      } finally {
+        setIsFetchingPreview(false);
+      }
+    };
+
+    // Debounce the fetch
+    const timeoutId = setTimeout(fetchPreview, 500);
+    return () => clearTimeout(timeoutId);
+  }, [postLinkUrl]);
 
   const addForwardEmail = () => {
     const email = newForwardEmail.trim();
@@ -746,6 +820,117 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
     () => addToast("Failed to delete website inquiry", "destructive")
   );
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Form submission requires handling multiple media types and validation
+  const handlePostSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!(postCaption || postFile || postLinkUrl)) {
+      addToast("Please add a caption, file, or link", "destructive");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      let fileId: Id<"_storage"> | undefined;
+      let mediaType: "image" | "audio" | "video" | "link" | null = null;
+      let linkType:
+        | "youtube"
+        | "soundcloud"
+        | "bandcamp"
+        | "vimeo"
+        | "generic"
+        | undefined;
+
+      if (postFile) {
+        // Upload file to Convex
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": postFile.type },
+          body: postFile,
+        });
+        const response = await result.json();
+        // Convex returns { storageId: "..." }
+        fileId = response.storageId as string as Id<"_storage">;
+
+        // Determine media type from file
+        if (postFile.type.startsWith("image/")) {
+          mediaType = "image";
+        } else if (postFile.type.startsWith("audio/")) {
+          mediaType = "audio";
+        } else if (postFile.type.startsWith("video/")) {
+          mediaType = "video";
+        }
+      } else if (postLinkUrl) {
+        mediaType = "link";
+        const normalizedUrl = normalizeUrl(postLinkUrl);
+        linkType = detectLinkType(normalizedUrl);
+        // Store the normalized URL with preview metadata
+        await addPost({
+          caption: postCaption || undefined,
+          mediaType,
+          fileId,
+          fileUrl: undefined,
+          linkUrl: normalizedUrl,
+          linkType,
+          linkTitle: linkPreview?.title,
+          linkDescription: linkPreview?.description,
+          linkImage: linkPreview?.image,
+          linkFavicon: linkPreview?.favicon,
+        });
+      } else {
+        // Text-only post
+        await addPost({
+          caption: postCaption || undefined,
+          mediaType: null,
+          fileId,
+          fileUrl: undefined,
+          linkUrl: undefined,
+          linkType: undefined,
+        });
+      }
+
+      // Reset form
+      setPostCaption("");
+      setPostFile(null);
+      if (postFilePreview) {
+        URL.revokeObjectURL(postFilePreview);
+      }
+      setPostFilePreview(null);
+      setPostLinkUrl("");
+      // Reset file input
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = "";
+      }
+      addToast("Post created successfully");
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      addToast("Failed to create post", "destructive");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handlePostDeleteConfirm = createDeleteHandler(
+    postToDelete,
+    async () => {
+      if (!postToDelete) {
+        return;
+      }
+      await removePost({ id: postToDelete.id as Id<"posts"> });
+    },
+    () => {
+      setShowPostDeleteDialog(false);
+      setPostToDelete(null);
+    },
+    () => addToast("Post deleted successfully"),
+    () => addToast("Failed to delete post", "destructive")
+  );
+
   const navigateToTourDate = (index: number) => {
     if (index < 0 || index >= dates.length) {
       return;
@@ -786,6 +971,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
       <div className="mb-8 flex gap-4 border-primary/20 border-b">
         <button
           className={`pb-4 font-serif text-lg transition-colors ${
+            activeTab === "thread"
+              ? "border-foreground border-b-2 text-foreground"
+              : "text-foreground/50 hover:text-foreground"
+          }`}
+          onClick={() => setActiveTab("thread")}
+          type="button"
+        >
+          Thread
+        </button>
+        <button
+          className={`pb-4 font-serif text-lg transition-colors ${
             activeTab === "tour"
               ? "border-foreground border-b-2 text-foreground"
               : "text-foreground/50 hover:text-foreground"
@@ -807,6 +1003,294 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
           Connect
         </button>
       </div>
+
+      {/* Thread Tab Content */}
+      {activeTab === "thread" && (
+        <>
+          <form className="relative" onSubmit={handlePostSubmit}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel className="text-foreground/70 text-xs tracking-wider">
+                  Words
+                </FieldLabel>
+                <Textarea
+                  className="min-h-[100px] w-full rounded border border-primary/20 bg-background/50 p-3 text-foreground outline-none transition-colors focus:border-primary"
+                  onChange={(e) => setPostCaption(e.target.value)}
+                  placeholder="Write a caption..."
+                  rows={3}
+                  value={postCaption}
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel className="text-foreground/70 text-xs tracking-wider">
+                  Media
+                </FieldLabel>
+                <Input
+                  accept="image/*,audio/*,video/*"
+                  className="w-full rounded border border-primary/20 bg-background/50 p-3 text-foreground outline-none transition-colors focus:border-primary"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setPostFile(file);
+
+                    // Create preview URL
+                    if (postFilePreview) {
+                      URL.revokeObjectURL(postFilePreview);
+                    }
+
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      setPostFilePreview(previewUrl);
+                    } else {
+                      setPostFilePreview(null);
+                    }
+                  }}
+                  type="file"
+                />
+                {postFilePreview && postFile && (
+                  <div className="mt-4">
+                    {postFile.type.startsWith("image/") && (
+                      <div className="relative w-full overflow-hidden rounded-lg border border-primary/20">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {/* biome-ignore lint/performance/noImgElement: File preview, dimensions unknown */}
+                        {/* biome-ignore lint/correctness/useImageSize: Preview image dimensions unknown */}
+                        <img
+                          alt="Preview"
+                          className="h-auto w-full object-cover"
+                          src={postFilePreview}
+                        />
+                      </div>
+                    )}
+                    {postFile.type.startsWith("audio/") && (
+                      <div className="w-full rounded-lg border border-primary/20 bg-foreground/5 p-4">
+                        <p className="mb-2 text-foreground/70 text-sm">
+                          {postFile.name}
+                        </p>
+                        {/* biome-ignore lint/a11y/useMediaCaption: File preview, captions would need to be provided separately */}
+                        <audio
+                          className="w-full"
+                          controls
+                          src={postFilePreview}
+                        >
+                          Your browser does not support the audio element.
+                        </audio>
+                      </div>
+                    )}
+                    {postFile.type.startsWith("video/") && (
+                      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-primary/20">
+                        {/* biome-ignore lint/a11y/useMediaCaption: File preview, captions would need to be provided separately */}
+                        <video
+                          className="h-full w-full object-cover"
+                          controls
+                          src={postFilePreview}
+                        >
+                          Your browser does not support the video element.
+                        </video>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {postFile && !postFilePreview && (
+                  <p className="mt-2 text-foreground/60 text-xs">
+                    Selected: {postFile.name}
+                  </p>
+                )}
+              </Field>
+
+              <Field>
+                <FieldLabel className="text-foreground/70 text-xs tracking-wider">
+                  Link
+                </FieldLabel>
+                <Input
+                  className="w-full rounded border border-primary/20 bg-background/50 p-3 text-foreground outline-none transition-colors focus:border-primary"
+                  onChange={(e) => setPostLinkUrl(e.target.value)}
+                  placeholder="youtube.com/watch?v=... or thecloud.so/daniel, etc. (https:// optional)"
+                  type="text"
+                  value={postLinkUrl}
+                />
+                {isFetchingPreview && (
+                  <p className="mt-2 text-foreground/60 text-xs">
+                    Fetching preview...
+                  </p>
+                )}
+                {postLinkUrl && !isFetchingPreview && (
+                  <p className="mt-2 text-foreground/60 text-xs">
+                    Detected: {detectLinkType(normalizeUrl(postLinkUrl))}
+                  </p>
+                )}
+                {linkPreview && postLinkUrl && (
+                  <div className="mt-4">
+                    <GenericLink
+                      description={linkPreview.description}
+                      favicon={linkPreview.favicon}
+                      image={linkPreview.image}
+                      title={linkPreview.title}
+                      url={normalizeUrl(postLinkUrl)}
+                    />
+                  </div>
+                )}
+              </Field>
+
+              <Button
+                className="mt-4 w-full rounded bg-primary py-3 font-serif text-background text-xl transition-colors hover:bg-foreground disabled:opacity-50"
+                disabled={
+                  isUploading || !(postCaption || postFile || postLinkUrl)
+                }
+                type="submit"
+              >
+                {isUploading ? "Creating..." : "Create Post"}
+              </Button>
+            </FieldGroup>
+          </form>
+
+          <div className="mt-12">
+            <h3 className="mb-4 font-serif text-foreground text-xl">Posts</h3>
+            {posts.length === 0 ? (
+              <p className="text-foreground/40 text-sm italic">No posts yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {posts.map((post) => {
+                  const getMediaIcon = () => {
+                    switch (post.mediaType) {
+                      case "image":
+                        return (
+                          <ImageIcon className="text-foreground/60" size={16} />
+                        );
+                      case "video":
+                        return (
+                          <Video className="text-foreground/60" size={16} />
+                        );
+                      case "audio":
+                        return (
+                          <Music className="text-foreground/60" size={16} />
+                        );
+                      case "link":
+                        return (
+                          <LinkIcon className="text-foreground/60" size={16} />
+                        );
+                      default:
+                        return null;
+                    }
+                  };
+
+                  const getMediaThumbnail = () => {
+                    if (post.mediaType === "image" && post.fileUrl) {
+                      return (
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded border border-primary/20">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {/* biome-ignore lint/performance/noImgElement: Post thumbnail, dimensions unknown */}
+                          {/* biome-ignore lint/correctness/useImageSize: Thumbnail dimensions unknown */}
+                          <img
+                            alt="Post thumbnail"
+                            className="h-full w-full object-cover"
+                            src={post.fileUrl}
+                          />
+                        </div>
+                      );
+                    }
+                    if (post.mediaType === "link" && post.linkImage) {
+                      return (
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded border border-primary/20">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {/* biome-ignore lint/performance/noImgElement: Link preview image, dimensions unknown */}
+                          {/* biome-ignore lint/correctness/useImageSize: Link image dimensions unknown */}
+                          <img
+                            alt="Link preview"
+                            className="h-full w-full object-cover"
+                            src={post.linkImage}
+                          />
+                        </div>
+                      );
+                    }
+                    if (post.mediaType === "link" && post.linkFavicon) {
+                      return (
+                        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-primary/20 bg-foreground/5">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {/* biome-ignore lint/performance/noImgElement: Favicon, dimensions unknown */}
+                          {/* biome-ignore lint/correctness/useImageSize: Favicon dimensions unknown */}
+                          <img
+                            alt="Favicon"
+                            className="h-8 w-8"
+                            src={post.linkFavicon}
+                          />
+                        </div>
+                      );
+                    }
+                    return null;
+                  };
+
+                  return (
+                    <li
+                      className="rounded-lg border border-primary/10 bg-foreground/5 p-4"
+                      key={post._id}
+                    >
+                      <div className="flex items-start gap-3">
+                        {getMediaThumbnail()}
+                        <div className="flex flex-1 items-start justify-between">
+                          <div className="flex-1">
+                            {post.caption && (
+                              <p className="mb-2 text-foreground text-sm">
+                                {post.caption}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <div className="text-foreground/50 text-xs">
+                                {new Date(post.createdAt).toLocaleString()}
+                              </div>
+                              {post.mediaType && (
+                                <div className="flex items-center gap-1">
+                                  {getMediaIcon()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                            onClick={() => {
+                              setPostToDelete({
+                                id: post._id,
+                                caption: post.caption,
+                              });
+                              setShowPostDeleteDialog(true);
+                            }}
+                            type="button"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <AlertDialog
+            onOpenChange={setShowPostDeleteDialog}
+            open={showPostDeleteDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this post
+                  {postToDelete?.caption
+                    ? `: "${postToDelete.caption.substring(0, 50)}${postToDelete.caption.length > 50 ? "..." : ""}"`
+                    : ""}
+                  ? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePostDeleteConfirm}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
 
       {/* Tour Tab Content */}
       {activeTab === "tour" && (

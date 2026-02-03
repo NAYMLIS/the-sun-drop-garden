@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Hand } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TourMap, type TourMapRef } from "@/components/tour-map";
 import { getCategoryColor } from "@/lib/tour-map-style";
@@ -15,6 +15,9 @@ export function TourContent({ dates, attractions }: TourContentProps) {
   const mapRef = useRef<TourMapRef>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showSwipeIndicator, setShowSwipeIndicator] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,14 +56,62 @@ export function TourContent({ dates, attractions }: TourContentProps) {
     }
   }, [openDropdownId]);
 
+  // Handle swipe indicator visibility
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (!hasScrolled) {
+        setHasScrolled(true);
+        setShowSwipeIndicator(false);
+      }
+    };
+
+    const handleTouchStart = () => {
+      if (!hasScrolled) {
+        setHasScrolled(true);
+        setShowSwipeIndicator(false);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    container.addEventListener("touchstart", handleTouchStart);
+
+    // Hide indicator after 3 seconds if user hasn't scrolled
+    const timeout = setTimeout(() => {
+      setShowSwipeIndicator(false);
+    }, 3000);
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("touchstart", handleTouchStart);
+      clearTimeout(timeout);
+    };
+  }, [hasScrolled]);
+
   return (
     <div className="flex flex-1 flex-col gap-8 md:flex-row">
       {/* List View */}
       <div
-        className={`scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto pr-4 pb-4 md:max-h-[calc(100vh-12rem)] md:w-1/3 md:flex-col md:space-y-4 md:overflow-y-auto ${
+        className={`scrollbar-hide relative flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto pr-4 pb-4 md:max-h-[calc(100vh-12rem)] md:w-1/3 md:flex-col md:space-y-4 md:overflow-y-auto ${
           openDropdownId ? "pb-80 md:pb-4" : ""
         }`}
+        ref={scrollContainerRef}
       >
+        {/* Swipe Indicator - Only visible on mobile */}
+        {showSwipeIndicator && dates.length > 1 && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center md:hidden">
+            <div className="flex flex-col items-center gap-2">
+              <Hand className="h-8 w-8 animate-swipe text-primary" />
+              <span className="font-sans text-primary text-xs uppercase tracking-wider">
+                Swipe
+              </span>
+            </div>
+          </div>
+        )}
         {dates.map((d: TourDate) => {
           const cityAttractions = attractions.filter((a) => a.city === d.city);
           const isDropdownOpen = openDropdownId === d._id;
@@ -73,9 +124,9 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                 dropdownRefs.current[d._id] = el;
               }}
             >
-              <div className="group flex h-32 w-[85vw] flex-shrink-0 snap-center flex-col gap-2 rounded-lg border border-transparent bg-foreground/5 p-3 transition-all hover:border-primary/30 hover:bg-foreground/10 md:h-28 md:w-full">
+              <div className="group flex min-h-32 w-[85vw] flex-shrink-0 snap-center flex-col gap-2 rounded-lg border border-transparent bg-foreground/5 p-3 transition-all hover:border-primary/30 hover:bg-foreground/10 md:min-h-28 md:w-full">
                 <button
-                  className="flex flex-1 cursor-pointer flex-col justify-between text-left"
+                  className="flex flex-1 cursor-pointer flex-col justify-start text-left"
                   onClick={() => {
                     mapRef.current?.navigateToCity(d);
                   }}
@@ -103,7 +154,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <a
-                        className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-0 transition-opacity group-hover:opacity-100"
+                        className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                         href={d.ticketLink}
                         onClick={(e) => e.stopPropagation()}
                         rel="noopener noreferrer"
@@ -148,7 +199,6 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                           setTimeout(() => {
                             mapRef.current?.navigateToAttraction(attraction);
                           }, 600);
-                          setOpenDropdownId(null);
                         }}
                         type="button"
                       >
