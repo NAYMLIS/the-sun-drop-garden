@@ -15,27 +15,11 @@ const NAV_ITEMS = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const [showAdminLink, setShowAdminLink] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Load preference from localStorage
-    const stored = localStorage.getItem("showAdminLink");
-    if (stored === "true") {
-      setShowAdminLink(true);
-    }
-
-    // Handle Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+    // Handle ESC key to close mobile menu
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setShowAdminLink((prev) => {
-          const newValue = !prev;
-          localStorage.setItem("showAdminLink", String(newValue));
-          return newValue;
-        });
-      }
-      // Handle ESC key to close mobile menu
       if (e.key === "Escape" && isMobileMenuOpen) {
         setIsMobileMenuOpen(false);
       }
@@ -98,14 +82,12 @@ export function Navigation() {
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
-          {showAdminLink && (
-            <Link
-              className="hidden text-foreground/30 transition-colors hover:text-foreground md:block"
-              href="/admin"
-            >
-              <Lock size={14} />
-            </Link>
-          )}
+          <Link
+            className="hidden text-foreground/30 transition-colors hover:text-foreground md:block"
+            href="/admin"
+          >
+            <Lock size={14} />
+          </Link>
           <button
             aria-expanded={isMobileMenuOpen}
             aria-label="Toggle mobile menu"
@@ -187,15 +169,13 @@ export function Navigation() {
               {/* Footer with theme toggle and admin link */}
               <div className="mt-auto flex items-center justify-end gap-4 border-primary/10 border-t pt-6">
                 <ThemeToggle />
-                {showAdminLink && (
-                  <Link
-                    className="text-foreground/30 transition-colors hover:text-foreground"
-                    href="/admin"
-                    onClick={handleNavClick}
-                  >
-                    <Lock size={14} />
-                  </Link>
-                )}
+                <Link
+                  className="text-foreground/30 transition-colors hover:text-foreground"
+                  href="/admin"
+                  onClick={handleNavClick}
+                >
+                  <Lock size={14} />
+                </Link>
               </div>
             </div>
           </div>

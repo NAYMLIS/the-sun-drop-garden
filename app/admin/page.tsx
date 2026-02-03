@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminPanel } from "@/components/admin-panel";
 import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,22 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/convex/_generated/api";
 import { verifyAdminPassword } from "./actions";
 
+const ADMIN_AUTH_KEY = "adminAuthenticated";
+
 export default function AdminPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState("");
   const { addToast } = useToast();
 
   const dates = useQuery(api.tourDates.list) || [];
+
+  // Check localStorage on mount to restore authentication state
+  useEffect(() => {
+    const stored = localStorage.getItem(ADMIN_AUTH_KEY);
+    if (stored === "true") {
+      setIsUnlocked(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +38,7 @@ export default function AdminPage() {
 
     if (isValid) {
       setIsUnlocked(true);
+      localStorage.setItem(ADMIN_AUTH_KEY, "true");
     } else {
       addToast("Incorrect password", "destructive");
       setPassword("");

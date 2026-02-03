@@ -26,6 +26,7 @@ interface TourMapProps {
 
 export interface TourMapRef {
   navigateToCity: (city: TourDate) => void;
+  navigateToAttraction: (attraction: Attraction) => void;
 }
 
 export const TourMap = forwardRef<TourMapRef, TourMapProps>(
@@ -39,6 +40,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       currentIndex,
       isFullScreen,
       navigateToCity,
+      navigateToAttraction,
       navigateToPrevious,
       navigateToNext,
       setSelectedAttraction,
@@ -48,7 +50,10 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       resetToGlobalView,
     } = useTourMap({ dates, attractions });
 
-    useImperativeHandle(ref, () => ({ navigateToCity }), [navigateToCity]);
+    useImperativeHandle(ref, () => ({ navigateToCity, navigateToAttraction }), [
+      navigateToCity,
+      navigateToAttraction,
+    ]);
 
     const cityAttractions = selectedCity
       ? attractions.filter((a) => a.city === selectedCity.city)
@@ -63,7 +68,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         className={`group relative flex items-center justify-center overflow-hidden ${
           isFullScreen
             ? "!fixed inset-0 z-[9999] h-screen w-screen bg-background"
-            : "h-full min-h-[400px] w-full rounded-lg border border-primary/10 bg-background/30"
+            : "h-full min-h-[600px] w-full rounded-lg border border-primary/10 bg-background/30 md:min-h-[400px]"
         }`}
         ref={containerRef}
       >
