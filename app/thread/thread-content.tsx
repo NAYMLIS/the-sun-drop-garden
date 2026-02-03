@@ -39,7 +39,13 @@ function formatDate(timestamp: number): string {
 export function ThreadContent({ posts: initialPosts }: ThreadContentProps) {
   // Use real-time query for live updates
   const queryResult = useQuery(api.posts.list);
-  const posts = (queryResult ?? initialPosts) || [];
+  // Handle query errors gracefully - use initialPosts if query fails
+  let posts: Post[] = [];
+  if (Array.isArray(queryResult)) {
+    posts = queryResult;
+  } else if (Array.isArray(initialPosts)) {
+    posts = initialPosts;
+  }
 
   if (!posts || posts.length === 0) {
     return (

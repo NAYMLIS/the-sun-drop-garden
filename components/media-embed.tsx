@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
+  getBandcampEmbedUrl,
   getSoundCloudEmbedUrl,
   getVimeoEmbedUrl,
   getYouTubeEmbedUrl,
@@ -57,15 +58,14 @@ interface BandcampEmbedProps {
 }
 
 export function BandcampEmbed({ url }: BandcampEmbedProps) {
-  // Bandcamp embeds work differently - we'll use their iframe format
-  // For tracks: https://bandcamp.com/EmbeddedPlayer/track=...
-  // For albums: https://bandcamp.com/EmbeddedPlayer/album=...
-  // For simplicity, we'll link to the page directly in an iframe
+  const embedUrl = getBandcampEmbedUrl(url);
+
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-primary/20">
+    <div className="relative w-full overflow-hidden rounded-lg border border-primary/20">
       <iframe
-        className="absolute inset-0 h-full w-full border-0"
-        src={url}
+        allow="autoplay"
+        className="h-[120px] w-full border-0"
+        src={embedUrl}
         title="Bandcamp player"
       />
     </div>

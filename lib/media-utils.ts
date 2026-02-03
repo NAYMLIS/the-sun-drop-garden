@@ -124,9 +124,10 @@ export function getSoundCloudEmbedUrl(url: string): string {
 }
 
 export function getBandcampEmbedUrl(url: string): string {
-  // Bandcamp embed format: https://bandcamp.com/EmbeddedPlayer/...
-  // For now, we'll use an iframe with the track/album URL
-  return url;
+  // Bandcamp embed format: https://bandcamp.com/EmbeddedPlayer/?url=ENCODED_URL
+  // This works for both tracks and albums
+  const encodedUrl = encodeURIComponent(url);
+  return `https://bandcamp.com/EmbeddedPlayer/?url=${encodedUrl}&size=large&bgcol=ffffff&linkcol=0687f5&artwork=small&transparent=true`;
 }
 
 export function getVimeoEmbedUrl(url: string): string | null {

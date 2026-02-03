@@ -6,13 +6,40 @@ export const list = query({
   handler: async (ctx) => {
     try {
       const posts = await ctx.db.query("posts").collect();
-      return posts.sort((a, b) => {
-        const aTime = typeof a.createdAt === "number" ? a.createdAt : 0;
-        const bTime = typeof b.createdAt === "number" ? b.createdAt : 0;
-        return bTime - aTime;
+
+      if (!Array.isArray(posts)) {
+        return [];
+      }
+
+      // Filter out any invalid posts and sort safely
+      const validPosts = posts.filter((post) => {
+        try {
+          return (
+            post &&
+            typeof post === "object" &&
+            post !== null &&
+            "_id" in post &&
+            "createdAt" in post &&
+            typeof post.createdAt === "number"
+          );
+        } catch {
+          return false;
+        }
+      });
+
+      return validPosts.sort((a, b) => {
+        try {
+          const aTime = a.createdAt || 0;
+          const bTime = b.createdAt || 0;
+          return bTime - aTime;
+        } catch {
+          return 0;
+        }
       });
     } catch (error) {
+      // Log the error for debugging but return empty array to prevent crashes
       console.error("Error fetching posts:", error);
+      // Return empty array instead of throwing
       return [];
     }
   },
