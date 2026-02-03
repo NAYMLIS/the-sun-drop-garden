@@ -154,7 +154,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <a
-                        className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
+                        className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-100 transition-opacity"
                         href={d.ticketLink}
                         onClick={(e) => e.stopPropagation()}
                         rel="noopener noreferrer"
