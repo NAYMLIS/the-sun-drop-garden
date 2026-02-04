@@ -863,6 +863,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
         } else if (postFile.type.startsWith("video/")) {
           mediaType = "video";
         }
+
+        // Create post with uploaded file
+        await addPost({
+          caption: postCaption || undefined,
+          mediaType,
+          fileId,
+          fileUrl: undefined,
+          linkUrl: undefined,
+          linkType: undefined,
+        });
       } else if (postLinkUrl) {
         mediaType = "link";
         const normalizedUrl = normalizeUrl(postLinkUrl);
