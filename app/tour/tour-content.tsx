@@ -93,9 +93,9 @@ export function TourContent({ dates, attractions }: TourContentProps) {
   }, [hasScrolled]);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 md:flex-row">
+    <div className="flex flex-1 flex-col gap-0 md:flex-row md:gap-6">
       {/* Map View */}
-      <div className="min-h-[400px] w-full pb-6 md:order-2 md:h-[calc(100vh-12rem)] md:w-2/3">
+      <div className="min-h-[400px] w-full pt-6 pb-6 md:order-2 md:h-[calc(100vh-12rem)] md:w-2/3 md:pt-0 md:pb-6">
         <TourMap attractions={attractions} dates={dates} ref={mapRef} />
       </div>
       {/* List View */}
