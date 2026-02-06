@@ -35,9 +35,6 @@ export default function Home({
               </Link>
             </div>
           </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute top-20 right-20 h-64 w-64 rounded-full border border-primary/5" />
         </div>
       </main>
     </div>
