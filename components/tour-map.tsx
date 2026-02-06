@@ -44,7 +44,6 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       navigateToNext,
       setSelectedAttraction,
       setShowAttractionTags,
-      zoomToShowAttractions,
       toggleFullScreen,
       resetToGlobalView,
     } = useTourMap({ dates, attractions });
@@ -248,12 +247,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                     className="mb-2 flex w-full items-center justify-between text-foreground/40 text-xs italic transition-colors hover:text-foreground/60"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (showAttractionTags) {
-                        setShowAttractionTags(false);
-                      } else {
-                        zoomToShowAttractions();
-                        setTimeout(() => setShowAttractionTags(true), 100);
-                      }
+                      setShowAttractionTags(!showAttractionTags);
                     }}
                     type="button"
                   >
