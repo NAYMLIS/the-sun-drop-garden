@@ -133,6 +133,14 @@ export function useTourMap({
     // First click: zoom to level 8, second click: zoom to level 10
     const targetZoom = isSecondClick ? 10 : 8;
 
+    // Calculate offset for mobile: position point at 1/3 from top (2/3 up from bottom)
+    // to avoid being covered by the bottom card
+    const container = mapRef.current.getContainer();
+    const isMobile = !isFullScreen && window.innerWidth < 768;
+    const offset: [number, number] = isMobile
+      ? [0, -container.clientHeight / 6]
+      : [0, 0];
+
     // Stop any ongoing animation and immediately start new one
     mapRef.current.stop();
     mapRef.current.flyTo({
@@ -140,6 +148,7 @@ export function useTourMap({
       zoom: targetZoom,
       duration: 600,
       essential: true,
+      offset,
     });
   };
 
@@ -164,6 +173,14 @@ export function useTourMap({
 
     const currentZoom = mapRef.current.getZoom();
 
+    // Calculate offset for mobile: position point at 1/3 from top (2/3 up from bottom)
+    // to avoid being covered by the bottom card
+    const container = mapRef.current.getContainer();
+    const isMobile = !isFullScreen && window.innerWidth < 768;
+    const offset: [number, number] = isMobile
+      ? [0, -container.clientHeight / 6]
+      : [0, 0];
+
     // If already zoomed in (>= 13), just pan smoothly without changing zoom
     // Then zoom in to 15 if not already there
     if (currentZoom >= 13) {
@@ -173,16 +190,23 @@ export function useTourMap({
         zoom: currentZoom,
         duration: 400,
         essential: true,
+        offset,
       });
       // Zoom in to close-up if not already at 15
       if (currentZoom < 15) {
         setTimeout(() => {
           if (mapRef.current) {
+            const container = mapRef.current.getContainer();
+            const isMobile = !isFullScreen && window.innerWidth < 768;
+            const offset: [number, number] = isMobile
+              ? [0, -container.clientHeight / 6]
+              : [0, 0];
             mapRef.current.flyTo({
               center: [attraction.lng, attraction.lat],
               zoom: 15,
               duration: 300,
               essential: true,
+              offset,
             });
           }
         }, 400);
@@ -197,6 +221,7 @@ export function useTourMap({
       zoom: 15,
       duration: 600,
       essential: true,
+      offset,
     });
   };
 
@@ -265,7 +290,7 @@ export function useTourMap({
 
     mapRef.current.flyTo({
       center: centerRef.current,
-      zoom: 1.5,
+      zoom: 1.2,
       duration: 1000,
     });
   };
@@ -291,7 +316,7 @@ export function useTourMap({
       container: containerRef.current,
       style: tourMapStyle,
       center: initialCenter,
-      zoom: 1.5,
+      zoom: 1.2,
       attributionControl: false,
       doubleClickZoom: false,
     });

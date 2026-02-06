@@ -93,10 +93,14 @@ export function TourContent({ dates, attractions }: TourContentProps) {
   }, [hasScrolled]);
 
   return (
-    <div className="flex flex-1 flex-col gap-8 md:flex-row">
+    <div className="flex flex-1 flex-col gap-6 md:flex-row">
+      {/* Map View */}
+      <div className="min-h-[400px] w-full pb-6 md:order-2 md:h-[calc(100vh-12rem)] md:w-2/3">
+        <TourMap attractions={attractions} dates={dates} ref={mapRef} />
+      </div>
       {/* List View */}
       <div
-        className={`scrollbar-hide relative flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto pr-4 pb-4 md:max-h-[calc(100vh-12rem)] md:w-1/3 md:flex-col md:space-y-4 md:overflow-y-auto ${
+        className={`scrollbar-hide relative -mx-6 flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto px-6 pb-4 md:order-1 md:mx-0 md:max-h-[calc(100vh-12rem)] md:w-1/3 md:flex-col md:space-y-4 md:overflow-y-auto ${
           openDropdownId ? "pb-80 md:pb-4" : ""
         }`}
         ref={scrollContainerRef}
@@ -160,7 +164,7 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                         rel="noopener noreferrer"
                         target="_blank"
                       >
-                        Tickets
+                        Obtain Tickets
                       </a>
                     </div>
                   </div>
@@ -235,10 +239,6 @@ export function TourContent({ dates, attractions }: TourContentProps) {
             </div>
           );
         })}
-      </div>
-      {/* Map View */}
-      <div className="min-h-[600px] w-full pb-6 md:h-[calc(100vh-12rem)] md:w-2/3">
-        <TourMap attractions={attractions} dates={dates} ref={mapRef} />
       </div>
     </div>
   );

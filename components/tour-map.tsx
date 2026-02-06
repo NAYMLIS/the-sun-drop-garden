@@ -11,7 +11,6 @@ import {
   MapPin,
   Maximize2,
   Minimize2,
-  Ticket,
   X,
 } from "lucide-react";
 import { forwardRef, useImperativeHandle } from "react";
@@ -68,7 +67,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         className={`group relative flex items-center justify-center overflow-hidden ${
           isFullScreen
             ? "!fixed inset-0 z-[9999] h-screen w-screen bg-background"
-            : "h-full min-h-[600px] w-full rounded-lg border border-primary/10 bg-background/30 md:min-h-[400px]"
+            : "h-full min-h-[400px] w-full rounded-lg border border-primary/10 bg-background/30 md:min-h-[400px]"
         }`}
         ref={containerRef}
       >
@@ -162,7 +161,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                       rel="noopener noreferrer"
                       target="_blank"
                     >
-                      Tickets
+                      Obtain Tickets
                     </a>
                   </div>
                   {d.description && (
@@ -235,12 +234,12 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                   )}
                 </div>
                 <a
-                  className="flex items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 font-bold text-foreground text-xs uppercase tracking-wider transition-colors hover:bg-foreground hover:text-background"
+                  className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-100 transition-opacity"
                   href={selectedCity.ticketLink}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Ticket size={10} /> Get Tickets
+                  Obtain Tickets
                 </a>
               </div>
               {cityAttractions.length > 0 && (

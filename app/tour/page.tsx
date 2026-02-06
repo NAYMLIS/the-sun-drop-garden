@@ -20,11 +20,11 @@ export default async function TourPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <main className="mx-auto flex min-h-[calc(100vh-2rem)] w-full animate-fade-in flex-col px-6 pt-32 md:px-12">
-        <h2 className="mb-8 whitespace-nowrap border-primary/20 border-b font-serif text-2xl text-foreground">
+      <main className="mx-auto flex min-h-[calc(100vh-2rem)] w-full animate-fade-in flex-col px-6 pt-24 md:px-12">
+        <TourContent attractions={attractions} dates={dates} />
+        <h2 className="mt-6 whitespace-nowrap border-primary/20 border-b font-serif text-2xl text-foreground md:text-3xl lg:text-4xl">
           2026 North American Tour
         </h2>
-        <TourContent attractions={attractions} dates={dates} />
       </main>
     </div>
   );
