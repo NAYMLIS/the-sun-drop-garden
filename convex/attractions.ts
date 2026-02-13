@@ -50,3 +50,20 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+export const removeByNameAndCity = mutation({
+  args: { name: v.string(), city: v.string() },
+  handler: async (ctx, args) => {
+    const matches = await ctx.db
+      .query("attractions")
+      .withIndex("by_city", (q) => q.eq("city", args.city))
+      .collect();
+    for (const a of matches) {
+      if (a.name === args.name) {
+        await ctx.db.delete(a._id);
+        return a._id;
+      }
+    }
+    return null;
+  },
+});

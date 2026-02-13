@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -366,6 +367,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
   >([]);
   const [isAttractionSearching, setIsAttractionSearching] = useState(false);
   const [showAttractionResults, setShowAttractionResults] = useState(false);
+  const [expandedCities, setExpandedCities] = useState<Set<string>>(new Set());
   const attractionSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -1718,59 +1720,109 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ dates }) => {
                   No attractions added yet.
                 </p>
               ) : (
-                <ul className="space-y-3">
-                  {attractions.map((attr) => (
-                    <li
-                      className="flex items-start justify-between rounded-lg border border-primary/10 bg-foreground/5 p-4"
-                      key={attr._id}
-                    >
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <h4 className="font-serif text-foreground text-lg">
-                            {attr.name}
-                          </h4>
-                          <span
-                            className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground/70 text-xs uppercase tracking-wider"
-                            style={{
-                              backgroundColor: `${getCategoryColor(attr.category as AttractionCategory)}20`,
-                              color: getCategoryColor(
-                                attr.category as AttractionCategory
-                              ).replace("0.8", "1"),
+                <div className="space-y-2">
+                  {(() => {
+                    const byCity = new Map<string, typeof attractions>();
+                    for (const attr of attractions) {
+                      const key = attr.city || "Other";
+                      const list = byCity.get(key) ?? [];
+                      list.push(attr);
+                      byCity.set(key, list);
+                    }
+                    const cities = [...byCity.keys()].sort((a, b) =>
+                      a.localeCompare(b)
+                    );
+                    return cities.map((city) => {
+                      const cityAttractions = byCity.get(city) ?? [];
+                      const isExpanded = expandedCities.has(city);
+                      return (
+                        <div
+                          className="rounded-lg border border-primary/10 bg-foreground/5"
+                          key={city}
+                        >
+                          <button
+                            className="flex w-full items-center justify-between gap-2 p-4 text-left transition-colors hover:bg-foreground/5"
+                            onClick={() => {
+                              setExpandedCities((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(city)) {
+                                  next.delete(city);
+                                } else {
+                                  next.add(city);
+                                }
+                                return next;
+                              });
                             }}
+                            type="button"
                           >
-                            {attr.category}
-                          </span>
+                            <span className="font-serif text-foreground text-lg">
+                              {city}
+                            </span>
+                            <span className="flex items-center gap-2 text-foreground/60 text-sm">
+                              {cityAttractions.length} attraction
+                              {cityAttractions.length !== 1 ? "s" : ""}
+                              <ChevronDown
+                                className={`size-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              />
+                            </span>
+                          </button>
+                          {isExpanded && (
+                            <ul className="space-y-3 border-primary/10 border-t px-4 pt-2 pb-4">
+                              {cityAttractions.map((attr) => (
+                                <li
+                                  className="flex items-start justify-between rounded-lg border border-primary/10 bg-background p-4"
+                                  key={attr._id}
+                                >
+                                  <div className="flex-1">
+                                    <div className="mb-1 flex items-center gap-2">
+                                      <h4 className="font-serif text-foreground text-lg">
+                                        {attr.name}
+                                      </h4>
+                                      <span
+                                        className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground/70 text-xs uppercase tracking-wider"
+                                        style={{
+                                          backgroundColor: `${getCategoryColor(attr.category as AttractionCategory)}20`,
+                                          color: getCategoryColor(
+                                            attr.category as AttractionCategory
+                                          ).replace("0.8", "1"),
+                                        }}
+                                      >
+                                        {attr.category}
+                                      </span>
+                                    </div>
+                                    {attr.address && (
+                                      <p className="text-foreground/50 text-xs">
+                                        {attr.address}
+                                      </p>
+                                    )}
+                                    {attr.description && (
+                                      <p className="mt-1 text-foreground/40 text-xs italic">
+                                        {attr.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
+                                    onClick={() => {
+                                      setAttractionToDelete({
+                                        id: attr._id,
+                                        name: attr.name,
+                                      });
+                                      setShowDeleteDialog(true);
+                                    }}
+                                    type="button"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-                        <p className="text-foreground/60 text-sm">
-                          {attr.city}
-                        </p>
-                        {attr.address && (
-                          <p className="text-foreground/50 text-xs">
-                            {attr.address}
-                          </p>
-                        )}
-                        {attr.description && (
-                          <p className="mt-1 text-foreground/40 text-xs italic">
-                            {attr.description}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        className="ml-4 text-foreground/40 transition-colors hover:text-destructive"
-                        onClick={() => {
-                          setAttractionToDelete({
-                            id: attr._id,
-                            name: attr.name,
-                          });
-                          setShowDeleteDialog(true);
-                        }}
-                        type="button"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                      );
+                    });
+                  })()}
+                </div>
               )}
             </div>
           </div>

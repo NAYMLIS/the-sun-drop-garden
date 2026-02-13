@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   description:
     "An immersive artist website featuring tour dates, music, and visual galleries.",
   icons: {
-    icon: "/Favicon_TheSundropGarden.png",
-    apple: "/Favicon_TheSundropGarden.png",
+    icon: "/(((o)))(light).png",
+    apple: "/(((o)))(light).png",
   },
   openGraph: {
     title: "The Sundrop Garden",
