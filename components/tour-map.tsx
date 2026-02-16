@@ -2,6 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
+  ArrowLeft,
   Calendar,
   ChevronDown,
   ChevronLeft,
@@ -105,7 +106,7 @@ function FullscreenCommunityHeader({
               />
             </button>
             {showCommunityDropdown && (
-              <div className="absolute top-full left-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
+              <div className="absolute top-full right-0 left-auto z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md md:right-auto md:left-0">
                 <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md">
                   <button
                     className="flex w-full items-center gap-3 border-primary/20 border-b px-3 py-2.5 text-left transition-colors hover:bg-foreground/10"
@@ -302,7 +303,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         {/* Control Buttons */}
         <div
           className={`absolute z-10 flex flex-col gap-2 ${
-            isFullScreen ? "right-4 bottom-[170px]" : "top-4 right-4"
+            isFullScreen ? "right-4 bottom-[210px]" : "top-4 right-4"
           }`}
         >
           <button
@@ -343,6 +344,18 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
               <ChevronRight size={16} />
             </button>
           </div>
+        )}
+
+        {/* Back to Site Link */}
+        {isFullScreen && (
+          <a
+            className="absolute right-4 bottom-[170px] z-20 flex items-center gap-1.5 rounded-full border border-primary/30 bg-background/95 px-3 py-1.5 font-sans text-foreground/70 text-xs backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground"
+            href="https://thesundropgarden.com"
+            rel="noopener noreferrer"
+          >
+            <ArrowLeft size={14} />
+            Back to site
+          </a>
         )}
 
         {/* Fullscreen Tour Dates Bar */}
