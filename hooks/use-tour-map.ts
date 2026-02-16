@@ -273,7 +273,15 @@ export function useTourMap({
       const newValue = !prev;
       // Resize map after DOM updates with new fullscreen state
       setTimeout(() => {
-        mapRef.current?.resize();
+        if (mapRef.current) {
+          mapRef.current.resize();
+          mapRef.current.setPadding({
+            top: newValue ? 60 : 0,
+            bottom: newValue ? 150 : 0,
+            left: 0,
+            right: 0,
+          });
+        }
       }, 0);
       return newValue;
     });

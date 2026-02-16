@@ -19,72 +19,22 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
 import { useTourMap } from "@/hooks/use-tour-map";
 import { getCategoryColor } from "@/lib/tour-map-style";
 import type { Attraction, TourDate } from "@/lib/types";
 
-function PopupCommunityDropdown({
+function PopupCommunityInfo({
   cityAttractions,
   uniqueCategories,
-  navigateToAttraction,
-  setSelectedAttraction,
 }: {
   cityAttractions: Attraction[];
   uniqueCategories: string[];
-  navigateToAttraction: (attraction: Attraction) => void;
-  setSelectedAttraction: (attraction: Attraction | null) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLDivElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const [listStyle, setListStyle] = useState<React.CSSProperties>({});
-
-  useEffect(() => {
-    if (open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setListStyle({
-        position: "fixed",
-        top: `${rect.bottom + 8}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-      });
-    }
-  }, [open]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        open &&
-        triggerRef.current &&
-        listRef.current &&
-        !triggerRef.current.contains(target) &&
-        !listRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
   return (
-    <div className="mt-2 border-primary/10 border-t pt-2" ref={triggerRef}>
-      <button
-        className="mb-1.5 flex w-full items-center justify-between text-foreground/40 text-xs italic transition-colors hover:text-foreground/60"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-        type="button"
-      >
-        <span>{cityAttractions.length} community destinations nearby</span>
-        <ChevronDown
-          className={`text-foreground/40 transition-transform ${open ? "rotate-180" : ""}`}
-          size={14}
-        />
-      </button>
+    <div className="mt-2 border-primary/10 border-t pt-2">
+      <p className="mb-1.5 text-foreground/40 text-xs italic">
+        {cityAttractions.length} community destinations nearby
+      </p>
       <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
         {uniqueCategories.map((category) => (
           <span
@@ -103,46 +53,6 @@ function PopupCommunityDropdown({
           </span>
         ))}
       </div>
-      {open &&
-        createPortal(
-          <div
-            className="z-[10000] max-h-64 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md"
-            ref={listRef}
-            style={listStyle}
-          >
-            <div className="p-1.5">
-              {cityAttractions.map((attraction) => (
-                <button
-                  className="flex w-full items-start gap-2 rounded p-1.5 text-left transition-colors hover:bg-foreground/10"
-                  key={attraction._id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigateToAttraction(attraction);
-                    setSelectedAttraction(attraction);
-                    setOpen(false);
-                  }}
-                  type="button"
-                >
-                  <div
-                    className="mt-1 h-2 w-2 flex-shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: getCategoryColor(attraction.category),
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-serif text-foreground text-sm leading-tight">
-                      {attraction.name}
-                    </h4>
-                    <p className="line-clamp-1 font-sans text-foreground/60 text-xs">
-                      {attraction.address || attraction.city}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>,
-          document.body
-        )}
     </div>
   );
 }
@@ -153,6 +63,7 @@ function FullscreenCommunityHeader({
   showCommunityDropdown,
   setShowCommunityDropdown,
   communityDropdownRef,
+  navigateToCity,
   navigateToAttraction,
   setSelectedAttraction,
 }: {
@@ -161,20 +72,25 @@ function FullscreenCommunityHeader({
   showCommunityDropdown: boolean;
   setShowCommunityDropdown: (show: boolean) => void;
   communityDropdownRef: React.RefObject<HTMLDivElement | null>;
+  navigateToCity: (city: TourDate) => void;
   navigateToAttraction: (attraction: Attraction) => void;
   setSelectedAttraction: (attraction: Attraction | null) => void;
 }) {
   return (
     <div className="absolute top-0 right-0 left-0 z-20 border-primary/10 border-b bg-background/95 backdrop-blur-md">
       <div className="flex items-center justify-between gap-4 px-4 py-3 pr-20">
-        <div className="min-w-0 flex-1">
+        <button
+          className="min-w-0 flex-1 text-left transition-opacity hover:opacity-70"
+          onClick={() => navigateToCity(selectedCity)}
+          type="button"
+        >
           <h3 className="truncate font-serif text-foreground text-lg">
             {selectedCity.city}
           </h3>
           <p className="truncate font-sans text-foreground/60 text-xs">
             {selectedCity.venue}
           </p>
-        </div>
+        </button>
         {cityAttractions.length > 0 && (
           <div className="relative flex-shrink-0" ref={communityDropdownRef}>
             <button
@@ -189,29 +105,62 @@ function FullscreenCommunityHeader({
               />
             </button>
             {showCommunityDropdown && (
-              <div className="absolute top-full right-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
-                <div className="sticky top-0 z-10 border-primary/10 border-b bg-background/95 px-2 pt-2 pb-1.5 backdrop-blur-md">
-                  <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
-                    {[...new Set(cityAttractions.map((a) => a.category))].map(
-                      (category) => (
-                        <span
-                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
-                          key={category}
-                          style={{
-                            backgroundColor: `${getCategoryColor(category)}20`,
-                            color: getCategoryColor(category),
-                          }}
-                        >
+              <div className="absolute top-full left-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
+                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md">
+                  <button
+                    className="flex w-full items-center gap-3 border-primary/20 border-b px-3 py-2.5 text-left transition-colors hover:bg-foreground/10"
+                    onClick={() => {
+                      navigateToCity(selectedCity);
+                      setShowCommunityDropdown(false);
+                    }}
+                    type="button"
+                  >
+                    <MapPin className="flex-shrink-0 text-primary" size={14} />
+                    <div className="min-w-0 flex-1">
+                      <h4 className="truncate font-serif text-foreground text-sm">
+                        {selectedCity.venue}
+                      </h4>
+                      <p className="truncate font-sans text-foreground/60 text-xs">
+                        {new Date(selectedCity.date).toLocaleDateString(
+                          "en-US",
+                          { month: "long", day: "numeric" }
+                        )}
+                        {selectedCity.time ? ` · ${selectedCity.time}` : ""}
+                      </p>
+                    </div>
+                    <a
+                      className="flex-shrink-0 rounded-full bg-primary px-2 py-0.5 font-bold text-[9px] text-primary-foreground uppercase tracking-wider"
+                      href={selectedCity.ticketLink}
+                      onClick={(e) => e.stopPropagation()}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      Tickets
+                    </a>
+                  </button>
+                  <div className="border-primary/10 border-b px-2 pt-1.5 pb-1.5">
+                    <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
+                      {[...new Set(cityAttractions.map((a) => a.category))].map(
+                        (category) => (
                           <span
-                            className="inline-block h-1.5 w-1.5 rounded-full"
+                            className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                            key={category}
                             style={{
-                              backgroundColor: getCategoryColor(category),
+                              backgroundColor: `${getCategoryColor(category)}20`,
+                              color: getCategoryColor(category),
                             }}
-                          />
-                          {category}
-                        </span>
-                      )
-                    )}
+                          >
+                            <span
+                              className="inline-block h-1.5 w-1.5 rounded-full"
+                              style={{
+                                backgroundColor: getCategoryColor(category),
+                              }}
+                            />
+                            {category}
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="p-2">
@@ -342,6 +291,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
             cityAttractions={cityAttractions}
             communityDropdownRef={communityDropdownRef}
             navigateToAttraction={navigateToAttraction}
+            navigateToCity={navigateToCity}
             selectedCity={selectedCity}
             setSelectedAttraction={setSelectedAttraction}
             setShowCommunityDropdown={setShowCommunityDropdown}
@@ -349,8 +299,12 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
           />
         )}
 
-        {/* Control Buttons - Top Right */}
-        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        {/* Control Buttons */}
+        <div
+          className={`absolute z-10 flex flex-col gap-2 ${
+            isFullScreen ? "right-4 bottom-[170px]" : "top-4 right-4"
+          }`}
+        >
           <button
             className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-background/95 text-foreground/70 backdrop-blur-md transition-all hover:bg-foreground/10 hover:text-foreground"
             onClick={toggleFullScreen}
@@ -429,7 +383,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                       </p>
                     </div>
                     <a
-                      className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider opacity-0 transition-opacity group-hover:opacity-100"
+                      className="flex-shrink-0 rounded-full bg-primary px-2.5 py-1 font-bold text-[10px] text-primary-foreground uppercase tracking-wider"
                       href={d.ticketLink}
                       onClick={(e) => e.stopPropagation()}
                       rel="noopener noreferrer"
@@ -517,10 +471,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                 </a>
               </div>
               {cityAttractions.length > 0 && (
-                <PopupCommunityDropdown
+                <PopupCommunityInfo
                   cityAttractions={cityAttractions}
-                  navigateToAttraction={navigateToAttraction}
-                  setSelectedAttraction={setSelectedAttraction}
                   uniqueCategories={uniqueCategories}
                 />
               )}
