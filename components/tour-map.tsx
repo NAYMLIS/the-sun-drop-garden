@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Compass,
   MapPin,
   Maximize2,
@@ -20,9 +19,133 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useTourMap } from "@/hooks/use-tour-map";
 import { getCategoryColor } from "@/lib/tour-map-style";
 import type { Attraction, TourDate } from "@/lib/types";
+
+function PopupCommunityDropdown({
+  cityAttractions,
+  uniqueCategories,
+  navigateToAttraction,
+  setSelectedAttraction,
+}: {
+  cityAttractions: Attraction[];
+  uniqueCategories: string[];
+  navigateToAttraction: (attraction: Attraction) => void;
+  setSelectedAttraction: (attraction: Attraction | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [listStyle, setListStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setListStyle({
+        position: "fixed",
+        top: `${rect.bottom + 8}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+      });
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        open &&
+        triggerRef.current &&
+        listRef.current &&
+        !triggerRef.current.contains(target) &&
+        !listRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="mt-2 border-primary/10 border-t pt-2" ref={triggerRef}>
+      <button
+        className="mb-1.5 flex w-full items-center justify-between text-foreground/40 text-xs italic transition-colors hover:text-foreground/60"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        type="button"
+      >
+        <span>{cityAttractions.length} community destinations nearby</span>
+        <ChevronDown
+          className={`text-foreground/40 transition-transform ${open ? "rotate-180" : ""}`}
+          size={14}
+        />
+      </button>
+      <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
+        {uniqueCategories.map((category) => (
+          <span
+            className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+            key={category}
+            style={{
+              backgroundColor: `${getCategoryColor(category)}20`,
+              color: getCategoryColor(category),
+            }}
+          >
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: getCategoryColor(category) }}
+            />
+            {category}
+          </span>
+        ))}
+      </div>
+      {open &&
+        createPortal(
+          <div
+            className="z-[10000] max-h-64 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md"
+            ref={listRef}
+            style={listStyle}
+          >
+            <div className="p-1.5">
+              {cityAttractions.map((attraction) => (
+                <button
+                  className="flex w-full items-start gap-2 rounded p-1.5 text-left transition-colors hover:bg-foreground/10"
+                  key={attraction._id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToAttraction(attraction);
+                    setSelectedAttraction(attraction);
+                    setOpen(false);
+                  }}
+                  type="button"
+                >
+                  <div
+                    className="mt-1 h-2 w-2 flex-shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: getCategoryColor(attraction.category),
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-serif text-foreground text-sm leading-tight">
+                      {attraction.name}
+                    </h4>
+                    <p className="line-clamp-1 font-sans text-foreground/60 text-xs">
+                      {attraction.address || attraction.city}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
 
 function FullscreenCommunityHeader({
   selectedCity,
@@ -66,7 +189,31 @@ function FullscreenCommunityHeader({
               />
             </button>
             {showCommunityDropdown && (
-              <div className="absolute top-full right-0 z-50 mt-2 max-h-64 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
+              <div className="absolute top-full right-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
+                <div className="sticky top-0 z-10 border-primary/10 border-b bg-background/95 px-2 pt-2 pb-1.5 backdrop-blur-md">
+                  <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
+                    {[...new Set(cityAttractions.map((a) => a.category))].map(
+                      (category) => (
+                        <span
+                          className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                          key={category}
+                          style={{
+                            backgroundColor: `${getCategoryColor(category)}20`,
+                            color: getCategoryColor(category),
+                          }}
+                        >
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor: getCategoryColor(category),
+                            }}
+                          />
+                          {category}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
                 <div className="p-2">
                   {cityAttractions.map((attraction) => (
                     <button
@@ -132,7 +279,6 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       containerRef,
       selectedCity,
       selectedAttraction,
-      showAttractionTags,
       sortedDates,
       currentIndex,
       isFullScreen,
@@ -141,7 +287,6 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       navigateToPrevious,
       navigateToNext,
       setSelectedAttraction,
-      setShowAttractionTags,
       toggleFullScreen,
       resetToGlobalView,
     } = useTourMap({ dates, attractions });
@@ -372,41 +517,12 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                 </a>
               </div>
               {cityAttractions.length > 0 && (
-                <div className="mt-2 border-primary/10 border-t pt-2">
-                  <button
-                    className="mb-2 flex w-full items-center justify-between text-foreground/40 text-xs italic transition-colors hover:text-foreground/60"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowAttractionTags(!showAttractionTags);
-                    }}
-                    type="button"
-                  >
-                    <span>
-                      {cityAttractions.length} community destinations nearby
-                    </span>
-                    {showAttractionTags ? (
-                      <ChevronUp className="text-foreground/40" size={14} />
-                    ) : (
-                      <ChevronDown className="text-foreground/40" size={14} />
-                    )}
-                  </button>
-                  {showAttractionTags && (
-                    <div className="flex flex-wrap gap-2">
-                      {uniqueCategories.map((category) => (
-                        <span
-                          className="inline-block rounded-full px-2 py-1 text-xs uppercase tracking-wider"
-                          key={category}
-                          style={{
-                            backgroundColor: `${getCategoryColor(category)}20`,
-                            color: getCategoryColor(category),
-                          }}
-                        >
-                          {category}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <PopupCommunityDropdown
+                  cityAttractions={cityAttractions}
+                  navigateToAttraction={navigateToAttraction}
+                  setSelectedAttraction={setSelectedAttraction}
+                  uniqueCategories={uniqueCategories}
+                />
               )}
             </div>
           </div>

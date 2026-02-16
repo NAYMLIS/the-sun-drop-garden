@@ -191,7 +191,31 @@ export function TourContent({ dates, attractions }: TourContentProps) {
                 )}
               </div>
               {isDropdownOpen && cityAttractions.length > 0 && (
-                <div className="absolute top-full right-0 left-0 z-50 mt-2 max-h-64 w-[85vw] overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md md:w-full">
+                <div className="absolute top-full right-0 left-0 z-50 mt-2 max-h-80 w-[85vw] overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md md:w-full">
+                  <div className="sticky top-0 z-10 border-primary/10 border-b bg-background/95 px-2 pt-2 pb-1.5 backdrop-blur-md">
+                    <div className="scrollbar-hide flex gap-1.5 overflow-x-auto">
+                      {[...new Set(cityAttractions.map((a) => a.category))].map(
+                        (category) => (
+                          <span
+                            className="inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                            key={category}
+                            style={{
+                              backgroundColor: `${getCategoryColor(category)}20`,
+                              color: getCategoryColor(category),
+                            }}
+                          >
+                            <span
+                              className="inline-block h-1.5 w-1.5 rounded-full"
+                              style={{
+                                backgroundColor: getCategoryColor(category),
+                              }}
+                            />
+                            {category}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
                   <div className="p-2">
                     {cityAttractions.map((attraction) => (
                       <button
