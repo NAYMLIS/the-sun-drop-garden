@@ -13,10 +13,108 @@ import {
   Minimize2,
   X,
 } from "lucide-react";
-import { forwardRef, useImperativeHandle } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { useTourMap } from "@/hooks/use-tour-map";
 import { getCategoryColor } from "@/lib/tour-map-style";
 import type { Attraction, TourDate } from "@/lib/types";
+
+function FullscreenCommunityHeader({
+  selectedCity,
+  cityAttractions,
+  showCommunityDropdown,
+  setShowCommunityDropdown,
+  communityDropdownRef,
+  navigateToAttraction,
+  setSelectedAttraction,
+}: {
+  selectedCity: TourDate;
+  cityAttractions: Attraction[];
+  showCommunityDropdown: boolean;
+  setShowCommunityDropdown: (show: boolean) => void;
+  communityDropdownRef: React.RefObject<HTMLDivElement | null>;
+  navigateToAttraction: (attraction: Attraction) => void;
+  setSelectedAttraction: (attraction: Attraction | null) => void;
+}) {
+  return (
+    <div className="absolute top-0 right-0 left-0 z-20 border-primary/10 border-b bg-background/95 backdrop-blur-md">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 pr-20">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-serif text-foreground text-lg">
+            {selectedCity.city}
+          </h3>
+          <p className="truncate font-sans text-foreground/60 text-xs">
+            {selectedCity.venue}
+          </p>
+        </div>
+        {cityAttractions.length > 0 && (
+          <div className="relative flex-shrink-0" ref={communityDropdownRef}>
+            <button
+              className="flex items-center justify-between gap-2 rounded-full bg-foreground/10 px-3 py-1.5 font-bold text-[10px] text-foreground uppercase tracking-wider transition-opacity hover:bg-foreground/20"
+              onClick={() => setShowCommunityDropdown(!showCommunityDropdown)}
+              type="button"
+            >
+              <span>Community</span>
+              <ChevronDown
+                className={`transition-transform ${showCommunityDropdown ? "rotate-180" : ""}`}
+                size={12}
+              />
+            </button>
+            {showCommunityDropdown && (
+              <div className="absolute top-full right-0 z-50 mt-2 max-h-64 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
+                <div className="p-2">
+                  {cityAttractions.map((attraction) => (
+                    <button
+                      className="group/attraction flex w-full items-start gap-2 rounded p-2 text-left transition-colors hover:bg-foreground/10"
+                      key={attraction._id}
+                      onClick={() => {
+                        navigateToAttraction(attraction);
+                        setSelectedAttraction(attraction);
+                        setShowCommunityDropdown(false);
+                      }}
+                      type="button"
+                    >
+                      <div
+                        className="mt-1 h-2 w-2 flex-shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: getCategoryColor(
+                            attraction.category
+                          ),
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-serif text-foreground text-sm leading-tight">
+                          {attraction.name}
+                        </h4>
+                        <p className="line-clamp-1 font-sans text-foreground/60 text-xs">
+                          {attraction.address || attraction.city}
+                        </p>
+                        <span
+                          className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                          style={{
+                            backgroundColor: `${getCategoryColor(attraction.category)}20`,
+                            color: getCategoryColor(attraction.category),
+                          }}
+                        >
+                          {attraction.category}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface TourMapProps {
   dates: TourDate[];
@@ -61,6 +159,25 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
       ...new Set(cityAttractions.map((a) => a.category)),
     ];
 
+    const [showCommunityDropdown, setShowCommunityDropdown] = useState(false);
+    const communityDropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Node;
+        if (
+          showCommunityDropdown &&
+          communityDropdownRef.current &&
+          !communityDropdownRef.current.contains(target)
+        ) {
+          setShowCommunityDropdown(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, [showCommunityDropdown]);
+
     return (
       <div
         className={`group relative flex items-center justify-center overflow-hidden ${
@@ -73,6 +190,19 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-foreground/40 uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">
           Drag, Scroll, Click
         </div>
+
+        {/* Fullscreen Community Header - Top */}
+        {isFullScreen && selectedCity && (
+          <FullscreenCommunityHeader
+            cityAttractions={cityAttractions}
+            communityDropdownRef={communityDropdownRef}
+            navigateToAttraction={navigateToAttraction}
+            selectedCity={selectedCity}
+            setSelectedAttraction={setSelectedAttraction}
+            setShowCommunityDropdown={setShowCommunityDropdown}
+            showCommunityDropdown={showCommunityDropdown}
+          />
+        )}
 
         {/* Control Buttons - Top Right */}
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
@@ -122,7 +252,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
             <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto px-4 py-4">
               {sortedDates.map((d: TourDate) => (
                 <button
-                  className={`group flex h-24 w-64 flex-shrink-0 cursor-pointer snap-center flex-col justify-between rounded-lg border p-3 text-left transition-all ${
+                  className={`group flex min-h-28 w-64 flex-shrink-0 cursor-pointer snap-center flex-col justify-between gap-2 overflow-hidden rounded-lg border p-3 text-left transition-all ${
                     selectedCity?._id === d._id
                       ? "border-primary/50 bg-foreground/10"
                       : "border-transparent bg-foreground/5 hover:border-primary/30 hover:bg-foreground/10"
@@ -133,8 +263,8 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                   }}
                   type="button"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 overflow-hidden">
                       <span className="mb-0.5 block font-sans text-foreground text-xs uppercase tracking-widest">
                         {new Date(d.date).toLocaleDateString("en-US", {
                           month: "long",
@@ -149,7 +279,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                       <h3 className="font-serif text-base text-foreground leading-tight">
                         {d.city}
                       </h3>
-                      <p className="line-clamp-1 font-sans text-foreground/60 text-xs">
+                      <p className="truncate font-sans text-foreground/60 text-xs">
                         {d.venue}
                       </p>
                     </div>
@@ -164,7 +294,7 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
                     </a>
                   </div>
                   {d.description && (
-                    <p className="line-clamp-1 border-primary/20 border-l pl-2 font-serif text-[10px] text-foreground/40 italic">
+                    <p className="truncate border-primary/20 border-l pl-2 font-serif text-[10px] text-foreground/40 italic">
                       "{d.description}"
                     </p>
                   )}
