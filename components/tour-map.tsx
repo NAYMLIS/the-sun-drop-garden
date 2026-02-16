@@ -106,7 +106,7 @@ function FullscreenCommunityHeader({
               />
             </button>
             {showCommunityDropdown && (
-              <div className="absolute top-full right-0 left-auto z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md md:right-auto md:left-0">
+              <div className="absolute top-full right-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-lg border border-primary/30 bg-background/95 shadow-2xl backdrop-blur-md">
                 <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md">
                   <button
                     className="flex w-full items-center gap-3 border-primary/20 border-b px-3 py-2.5 text-left transition-colors hover:bg-foreground/10"
