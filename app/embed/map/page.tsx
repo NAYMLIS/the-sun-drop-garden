@@ -3,6 +3,9 @@ import { api } from "@/convex/_generated/api";
 import type { Attraction, AttractionCategory } from "@/lib/types";
 import { EmbedMapContent } from "./embed-map-content";
 
+// Always render fresh so the regenerative spots stay in sync with Convex.
+export const revalidate = 0;
+
 export const metadata = {
   title: "The Sundrop Garden - Tour Map",
   description:

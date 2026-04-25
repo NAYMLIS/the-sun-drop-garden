@@ -4,6 +4,9 @@ import { api } from "@/convex/_generated/api";
 import type { Attraction, AttractionCategory } from "@/lib/types";
 import { TourContent } from "./tour-content";
 
+// Render fresh on every request so newly added regenerative spots appear immediately.
+export const revalidate = 0;
+
 export default async function TourPage() {
   const [dates, rawAttractions] = await Promise.all([
     fetchQuery(api.tourDates.list),
