@@ -20,6 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { TourMapSearch } from "@/components/tour-map-search";
 import { useTourMap } from "@/hooks/use-tour-map";
 import { getCategoryColor } from "@/lib/tour-map-style";
 import type { Attraction, TourDate } from "@/lib/types";
@@ -285,6 +286,15 @@ export const TourMap = forwardRef<TourMapRef, TourMapProps>(
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-foreground/40 uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">
           Drag, Scroll, Click
         </div>
+
+        {/* Search bar — cities + regenerative spots */}
+        <TourMapSearch
+          attractions={attractions}
+          dates={dates}
+          isFullScreen={isFullScreen}
+          onSelectAttraction={navigateToAttraction}
+          onSelectTour={navigateToCity}
+        />
 
         {/* Fullscreen Community Header - Top */}
         {isFullScreen && selectedCity && (

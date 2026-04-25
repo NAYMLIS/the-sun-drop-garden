@@ -101,7 +101,7 @@ export function useTourMap({
   const [selectedAttraction, setSelectedAttraction] =
     useState<Attraction | null>(null);
   const [showAttractionTags, setShowAttractionTags] = useState(false);
-  const [attractionsVisible, setAttractionsVisible] = useState(true);
+  const [attractionsVisible, setAttractionsVisible] = useState(false);
   const [isFullScreen, setIsFullScreen] = useAtom(mapFullScreenAtom);
 
   const sortedDates = sortDates(dates);
@@ -381,9 +381,15 @@ export function useTourMap({
       }
     });
 
-    // Attractions (regenerative spots) are visible at all zoom levels
-    // so the global map shows the full atlas of places.
-    setAttractionsVisible(true);
+    // Attractions appear once the user zooms past the global view, so the
+    // initial globe stays clean (only tour-stop markers visible). Threshold
+    // is zoom 5 — roughly continent-level — so spots fade in as you explore.
+    map.on("zoomend", () => {
+      const shouldShow = map.getZoom() >= 5;
+      setAttractionsVisible((prev) =>
+        prev !== shouldShow ? shouldShow : prev
+      );
+    });
 
     // Click on empty space to deselect
     map.on("click", (e) => {
@@ -428,7 +434,8 @@ export function useTourMap({
     }
   }, [selectedCity]);
 
-  // Update attraction markers when visibility or city changes
+  // Update attraction markers whenever the zoom-gated visibility flips
+  // or the underlying attractions list changes.
   useEffect(() => {
     if (!mapRef.current) {
       return;
@@ -443,11 +450,10 @@ export function useTourMap({
     attractionMarkersRef.current = [];
 
     if (attractionsVisible) {
-      // Show attractions globally — when a tour city is selected, focus on
-      // its local set; otherwise show every regenerative spot in the world.
-      const attractionsToShow = selectedCity
-        ? attractions.filter((a) => a.city === selectedCity.city)
-        : attractions;
+      // Show every regenerative spot in the world once the user has zoomed
+      // in past the globe view. No city filter — Kyle wants the full atlas
+      // visible whenever pins are on, not just spots near tour cities.
+      const attractionsToShow = attractions;
 
       for (const attraction of attractionsToShow) {
         const el = createAttractionMarkerElement(attraction, false);
@@ -464,7 +470,7 @@ export function useTourMap({
         attractionMarkersRef.current.push(marker);
       }
     }
-  }, [attractionsVisible, selectedCity, attractions]);
+  }, [attractionsVisible, attractions]);
 
   return {
     containerRef,
