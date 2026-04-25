@@ -101,7 +101,7 @@ export function useTourMap({
   const [selectedAttraction, setSelectedAttraction] =
     useState<Attraction | null>(null);
   const [showAttractionTags, setShowAttractionTags] = useState(false);
-  const [attractionsVisible, setAttractionsVisible] = useState(false);
+  const [attractionsVisible, setAttractionsVisible] = useState(true);
   const [isFullScreen, setIsFullScreen] = useAtom(mapFullScreenAtom);
 
   const sortedDates = sortDates(dates);
@@ -381,13 +381,9 @@ export function useTourMap({
       }
     });
 
-    // Track zoom level for attractions visibility
-    map.on("zoomend", () => {
-      const shouldShow = map.getZoom() >= 7;
-      setAttractionsVisible((prev) =>
-        prev !== shouldShow ? shouldShow : prev
-      );
-    });
+    // Attractions (regenerative spots) are visible at all zoom levels
+    // so the global map shows the full atlas of places.
+    setAttractionsVisible(true);
 
     // Click on empty space to deselect
     map.on("click", (e) => {
@@ -447,12 +443,11 @@ export function useTourMap({
     attractionMarkersRef.current = [];
 
     if (attractionsVisible) {
-      // Get set of valid tour cities
-      const validCities = new Set(sortedDates.map((d) => d.city));
-
+      // Show attractions globally — when a tour city is selected, focus on
+      // its local set; otherwise show every regenerative spot in the world.
       const attractionsToShow = selectedCity
         ? attractions.filter((a) => a.city === selectedCity.city)
-        : attractions.filter((a) => validCities.has(a.city));
+        : attractions;
 
       for (const attraction of attractionsToShow) {
         const el = createAttractionMarkerElement(attraction, false);
@@ -469,7 +464,7 @@ export function useTourMap({
         attractionMarkersRef.current.push(marker);
       }
     }
-  }, [attractionsVisible, selectedCity, attractions, sortedDates]);
+  }, [attractionsVisible, selectedCity, attractions]);
 
   return {
     containerRef,

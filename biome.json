@@ -1,6 +1,20 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
   "extends": ["ultracite/biome/core"],
+  "files": {
+    "includes": [
+      "!!**/_generated",
+      "!!**/*.gen.*",
+      "!!**/.next",
+      "!!**/next-env.d.ts",
+      "!!**/dist",
+      "!!**/build",
+      "!!**/out",
+      "!!**/.vercel",
+      "!!**/coverage",
+      "!!**/scripts"
+    ]
+  },
   "overrides": [
     {
       "includes": ["convex/**"],
