@@ -23,7 +23,6 @@ export default defineSchema({
     city: v.string(),
     description: v.optional(v.string()),
     // ((( O )))'s curation system (added 2026-04-27)
-    // Layer = top-level grouping she filters by
     layer: v.optional(
       v.union(
         v.literal("food"),
@@ -32,41 +31,31 @@ export default defineSchema({
         v.literal("wellness"),
         v.literal("stay"),
         v.literal("awareness"),
-<<<<<<< Updated upstream
-        v.literal("booking")
-      )
-=======
         v.literal("booking"),
       ),
->>>>>>> Stashed changes
     ),
-    // Tags = sub-types within a layer (e.g. layer=food + tags=[vegan, restaurant])
     tags: v.optional(v.array(v.string())),
-    // Public flag: only spots with publicMap=true show on the public /tour map
-    // Defaults to true for backwards compat with existing seeded spots.
     publicMap: v.optional(v.boolean()),
-    // Audit / source
-    addedBy: v.optional(v.string()), // email of user who added
+    addedBy: v.optional(v.string()),
     addedAt: v.optional(v.number()),
-    notes: v.optional(v.string()), // her private notes per pin
+    notes: v.optional(v.string()),
   })
     .index("by_city", ["city"])
     .index("by_layer", ["layer"])
     .index("by_publicMap", ["publicMap"]),
 
   // ((( O )))'s saved lists — like Google Maps "Your places"
-  // Each list is a named collection of attraction ids she's bookmarked.
   savedLists: defineTable({
     ownerEmail: v.string(),
-    name: v.string(), // e.g. "Vegan NYC", "Brooklyn Bath Houses"
-    layer: v.optional(v.string()), // optional default layer hint
-    color: v.optional(v.string()), // optional UI tint
-    icon: v.optional(v.string()), // optional emoji
+    name: v.string(),
+    layer: v.optional(v.string()),
+    color: v.optional(v.string()),
+    icon: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerEmail"]),
 
-  // Many-to-many join: which attractions are in which saved lists
+  // Many-to-many join
   savedListItems: defineTable({
     listId: v.id("savedLists"),
     attractionId: v.id("attractions"),
@@ -76,16 +65,16 @@ export default defineSchema({
     .index("by_attraction", ["attractionId"])
     .index("by_list_attraction", ["listId", "attractionId"]),
 
-  // Curator users (her account, plus admin/Kyle if needed)
+  // Curator users
   curators: defineTable({
     email: v.string(),
-    passwordHash: v.string(), // bcrypt-style or argon2; we'll use scrypt for simplicity
+    passwordHash: v.string(),
     displayName: v.optional(v.string()),
     createdAt: v.number(),
     lastLoginAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
-  // Session tokens (simple opaque random strings)
+  // Session tokens
   curatorSessions: defineTable({
     token: v.string(),
     email: v.string(),
@@ -123,7 +112,7 @@ export default defineSchema({
       v.literal("audio"),
       v.literal("video"),
       v.literal("link"),
-      v.null()
+      v.null(),
     ),
     fileId: v.optional(v.id("_storage")),
     fileUrl: v.optional(v.string()),
@@ -135,8 +124,8 @@ export default defineSchema({
         v.literal("bandcamp"),
         v.literal("vimeo"),
         v.literal("spotify"),
-        v.literal("generic")
-      )
+        v.literal("generic"),
+      ),
     ),
     linkTitle: v.optional(v.string()),
     linkDescription: v.optional(v.string()),

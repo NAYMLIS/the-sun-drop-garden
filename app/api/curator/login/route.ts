@@ -2,11 +2,13 @@ import { ConvexHttpClient } from "convex/browser";
 import { type NextRequest, NextResponse } from "next/server";
 import { api } from "@/convex/_generated/api";
 
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL;
-if (!CONVEX_URL) {
-  throw new Error("NEXT_PUBLIC_CONVEX_URL not set");
+function getClient(): ConvexHttpClient {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL not set");
+  }
+  return new ConvexHttpClient(url);
 }
-const client = new ConvexHttpClient(CONVEX_URL);
 
 const SESSION_COOKIE = "curator_session";
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60; // 30 days
@@ -22,7 +24,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const result = await client.mutation(api.curators.login, {
+    const result = await getClient().mutation(api.curators.login, {
       email,
       password,
     });
