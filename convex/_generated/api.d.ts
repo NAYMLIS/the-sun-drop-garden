@@ -9,8 +9,10 @@
  */
 
 import type * as attractions from "../attractions.js";
+import type * as curators from "../curators.js";
 import type * as forms from "../forms.js";
 import type * as posts from "../posts.js";
+import type * as savedLists from "../savedLists.js";
 import type * as tourDates from "../tourDates.js";
 
 import type {
@@ -21,8 +23,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   attractions: typeof attractions;
+  curators: typeof curators;
   forms: typeof forms;
   posts: typeof posts;
+  savedLists: typeof savedLists;
   tourDates: typeof tourDates;
 }>;
 

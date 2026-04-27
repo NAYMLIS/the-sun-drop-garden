@@ -22,6 +22,25 @@ export type AttractionCategory =
   | "miscellaneous"
   | "accommodation";
 
+export type AttractionLayer =
+  | "food"
+  | "groceries"
+  | "regeneration"
+  | "wellness"
+  | "stay"
+  | "awareness"
+  | "booking";
+
+export const ATTRACTION_LAYERS: AttractionLayer[] = [
+  "food",
+  "groceries",
+  "regeneration",
+  "wellness",
+  "stay",
+  "awareness",
+  "booking",
+];
+
 export interface Attraction {
   _id: string;
   name: string;
@@ -31,6 +50,29 @@ export interface Attraction {
   category: AttractionCategory;
   city: string;
   description?: string;
+  layer?: AttractionLayer;
+  tags?: string[];
+  publicMap?: boolean;
+  addedBy?: string;
+  addedAt?: number;
+  notes?: string;
+}
+
+export interface SavedList {
+  _id: string;
+  ownerEmail: string;
+  name: string;
+  layer?: string;
+  color?: string;
+  icon?: string;
+  createdAt: number;
+  updatedAt: number;
+  count?: number;
+}
+
+export interface CuratorMe {
+  email: string;
+  displayName?: string;
 }
 
 export type ViewState =
